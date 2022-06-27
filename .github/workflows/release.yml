@@ -36,4 +36,5 @@ jobs:
         name: fetcher-executable
     - name: Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: fetcher-executable
