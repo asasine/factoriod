@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -41,10 +40,21 @@ namespace Factoriod.Fetcher
                 {
                     yield return new FactorioVersion(
                         Version.Parse(version),
-                        Enum.Parse<ReleaseBuild>(build, ignoreCase: true),
+                        new ReleaseBuild(build),
                         stable);
                 }
             }
+        }
+
+        public async Task<FactorioVersion?> GetLatestHeadlessVersionAsync(CancellationToken cancellationToken = default)
+        {
+            var versions = this.GetVersionsAsync(false, cancellationToken);
+            if (versions == null)
+            {
+                return null;
+            }
+
+            return await versions.Where(version => version.Build == ReleaseBuild.Headless).FirstOrDefaultAsync(cancellationToken);
         }
     }
 }

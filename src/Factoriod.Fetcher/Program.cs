@@ -7,22 +7,23 @@ namespace Factoriod.Fetcher
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
             using var client = new HttpClient();
-            var outputFile = Path.GetTempFileName();
             var versionFetcher = new VersionFetcher(client);
-            var versions = versionFetcher.GetVersionsAsync();
-            if (versions == null)
+            var version = await versionFetcher.GetLatestHeadlessVersionAsync();
+            if (version == null)
             {
-                Console.WriteLine("No versions found");
+                Console.WriteLine("No version found");
                 return;
             }
-
-            await foreach (var version in versions)
-            {
-                Console.WriteLine(version);
-            }
+            
+            var outputDirectory = new DirectoryInfo(Path.Join(Path.GetTempPath(), "factoriod", "downloads"));
+            outputDirectory.Create();
+            Console.WriteLine($"Downloading {version} to {outputDirectory}");
+            var releaseFetcher = new ReleaseFetcher(client);
+            var outputFile = await releaseFetcher.DownloadToAsync(version, Distro.Linux64, outputDirectory);
+            Console.WriteLine($"Downloaded to {outputFile}");
         }
     }
 }
