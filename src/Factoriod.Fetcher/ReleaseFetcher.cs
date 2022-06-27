@@ -22,6 +22,12 @@ namespace Factoriod.Fetcher
             var outputFile = new FileInfo(Path.Join(versionedOutputDirectory, "factorio.tar.xz"));
             Console.WriteLine($"Downloading to {outputDirectory}");
 
+            if (outputFile.Exists)
+            {
+                Console.WriteLine($"File already exists: {outputFile}");
+                return outputFile;
+            }
+
             var downloadUrl = GetDownloadUrl(version, distro);
             using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -30,7 +36,7 @@ namespace Factoriod.Fetcher
             using var outputFileStream = File.Open(outputFile.FullName, FileMode.Create);
             await requestStream.CopyToAsync(outputFileStream, cancellationToken);
             response.Content = null;
-            
+
             return outputFile;
         }
 
