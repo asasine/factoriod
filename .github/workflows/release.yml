@@ -19,10 +19,12 @@ jobs:
         dotnet-version: 6.0.x
     - name: Create release assets
       run: dotnet publish -c Release --sc -r linux-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true
+    - name: Rename executable
+      run: mkdir dist && cp ./src/Factoriod.Fetcher/bin/Release/net6.0/linux-x64/publish/Factoriod.Fetcher ./dist/factorio-fetcher
     - uses: actions/upload-artifact@v3
       with:
         name: fetcher-executable
-        path: src/Factoriod.Fetcher/bin/Release/net6.0/linux-x64/publish/Factoriod.Fetcher
+        path: dist/factorio-fetcher
   release:
     runs-on: ubuntu-latest
     needs:
