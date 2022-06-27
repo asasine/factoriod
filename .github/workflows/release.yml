@@ -1,0 +1,21 @@
+name: Release
+
+
+on:
+  release:
+    types:
+      - published
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: GH Release
+      uses: softprops/action-gh-release@v0.1.14
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+    - name: Create release assets
+      run: dotnet publish -c Release --sc -r linux-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true
