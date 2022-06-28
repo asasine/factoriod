@@ -71,11 +71,11 @@ namespace Factoriod.Fetcher
             }
 
             await tarProcess.WaitForExitAsync(cancellationToken);
-            Console.WriteLine($"stdout:\n{tarProcess.StandardOutput.ReadToEnd()}");
-            Console.WriteLine($"stderr:\n{tarProcess.StandardError.ReadToEnd()}");
             if (tarProcess.ExitCode != 0)
             {
                 Console.WriteLine($"Tar process exited with code {tarProcess.ExitCode}");
+                Console.WriteLine($"stdout:\n{tarProcess.StandardOutput.ReadToEnd()}");
+                Console.WriteLine($"stderr:\n{tarProcess.StandardError.ReadToEnd()}");
                 return null;
             }
 
