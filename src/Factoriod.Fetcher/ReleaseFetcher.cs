@@ -1,10 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using SharpCompress.Common;
-using SharpCompress.Readers;
 
 namespace Factoriod.Fetcher
 {
@@ -44,27 +43,41 @@ namespace Factoriod.Fetcher
                 return null;
             }
 
-            return Extract(outputFile, outputFile.Directory);
+            return await ExtractAsync(outputFile, outputFile.Directory, cancellationToken);
         }
 
         private static string GetDownloadUrl(FactorioVersion version, Distro distro)
             => $"https://factorio.com/get-download/{version.Version}/{version.Build}/{distro}";
 
             
-        private static DirectoryInfo Extract(FileInfo input, DirectoryInfo output)
+        private static async Task<DirectoryInfo?> ExtractAsync(FileInfo input, DirectoryInfo output, CancellationToken cancellationToken = default)
         {
             Console.WriteLine($"Extracting {input} to {output}");
             output.Create();
-            using var inputStream = input.OpenRead();
-            using var reader = ReaderFactory.Open(inputStream);
-            reader.WriteAllToDirectory(output.FullName, new ExtractionOptions
-            {
-                ExtractFullPath = true,
-                Overwrite = true,
 
-                // throws NotImplementedException, need another way to preserve file permissions
-                // PreserveAttributes = true,
+            using var tarProcess = Process.Start(new ProcessStartInfo
+            {
+                FileName = "tar",
+                Arguments = $"-xJf {input.FullName} -C {output.FullName}",
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
             });
+
+            if (tarProcess == null)
+            {
+                Console.WriteLine("Could not start tar process");
+                return null;
+            }
+
+            await tarProcess.WaitForExitAsync(cancellationToken);
+            Console.WriteLine($"stdout:\n{tarProcess.StandardOutput.ReadToEnd()}");
+            Console.WriteLine($"stderr:\n{tarProcess.StandardError.ReadToEnd()}");
+            if (tarProcess.ExitCode != 0)
+            {
+                Console.WriteLine($"Tar process exited with code {tarProcess.ExitCode}");
+                return null;
+            }
 
             return new DirectoryInfo(Path.Join(output.FullName, "factorio"));
         }
