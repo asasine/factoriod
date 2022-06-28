@@ -2,8 +2,6 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using SharpCompress.Common;
-using SharpCompress.Readers;
 
 namespace Factoriod.Fetcher
 {
