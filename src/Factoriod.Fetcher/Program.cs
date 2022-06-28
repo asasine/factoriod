@@ -26,32 +26,8 @@ namespace Factoriod.Fetcher
             outputDirectory.Create();
             Console.WriteLine($"Downloading {version} to {downloadsDirectory}");
             var releaseFetcher = new ReleaseFetcher(client);
-            var outputFile = await releaseFetcher.DownloadToAsync(version, Distro.Linux64, downloadsDirectory);
-            Console.WriteLine($"Downloaded to {outputFile}");
-
-            if (outputFile.Directory == null)
-            {
-                Console.WriteLine($"Could not find directory of {outputFile}");
-                return;
-            }
-
-            var extractedFiles = Extract(outputFile, outputFile.Directory);
-            Console.WriteLine($"Extracted to {extractedFiles}");
-        }
-
-        private static DirectoryInfo Extract(FileInfo input, DirectoryInfo output)
-        {
-            Console.WriteLine($"Extracting {input} to {output}");
-            output.Create();
-            using var inputStream = input.OpenRead();
-            using var reader = ReaderFactory.Open(inputStream);
-            reader.WriteAllToDirectory(output.FullName, new ExtractionOptions
-            {
-                ExtractFullPath = true,
-                Overwrite = true
-            });
-
-            return new DirectoryInfo(Path.Join(output.FullName, "factorio"));
+            var extractedDirectory = await releaseFetcher.DownloadToAsync(version, Distro.Linux64, downloadsDirectory);
+            Console.WriteLine($"Downloaded and extracted to {extractedDirectory}");
         }
     }
 }
