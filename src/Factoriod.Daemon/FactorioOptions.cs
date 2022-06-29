@@ -4,6 +4,7 @@ namespace Factoriod.Daemon.Options
     {
         public FactorioExecutable Executable { get; set; } = null!;
         public FactorioConfiguration Configuration { get; set; } = null!;
+        public FactorioMapGeneration MapGeneration { get; set; } = null!;
         public string ModsRootDirectory { get; set; } = null!;
     }
 
@@ -11,6 +12,9 @@ namespace Factoriod.Daemon.Options
     {
         public string RootDirectory { get; set; } = null!;
         public string ExecutableName { get; set; } = null!;
+
+        public string GetExecutablePath()
+            => Path.Combine(this.RootDirectory, this.ExecutableName);
     }
 
     public sealed class FactorioConfiguration
@@ -37,5 +41,19 @@ namespace Factoriod.Daemon.Options
         
         public string GetServerAdminlistPath()
             => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerAdminlistPath));
+    }
+
+    public sealed class FactorioMapGeneration
+    {
+        public string RootDirectory { get; set; } = null!;
+        public string MapGenSettingsPath { get; set; } = null!;
+        public int? MapGenSeed { get; set; }
+        public string MapSettingsPath { get; set; } = null!;
+
+        public string GetMapGenSettingsPath()
+            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.MapGenSettingsPath));
+
+        public string GetMapSettingsPath()
+            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.MapSettingsPath));
     }
 }

@@ -18,7 +18,7 @@ namespace Factoriod.Daemon
             this.lifetime = lifetime;
             this.options = options.Value;
 
-            var factorioExecutablePath = Path.Combine(this.options.Executable.RootDirectory, this.options.Executable.ExecutableName);
+            var factorioExecutablePath = this.options.Executable.GetExecutablePath();
             this.logger.LogInformation("Using factorio executable at {path}", factorioExecutablePath);
             this.factorioProcess = new Process()
             {
@@ -39,8 +39,13 @@ namespace Factoriod.Daemon
         private string CreateArguments()
         {
             // /etc/factoriod/server-settings.json
-            var arguments = new List<string>();
-            AddArgumentIfFileExists(arguments, "--start-server", this.options.Configuration.GetSavePath());
+            var arguments = new List<string>()
+            {
+                // save path doesn't get existence validation because we create it later if it doesn't exist
+                "--start-server",
+                this.options.Configuration.GetSavePath(),
+            };
+
             AddArgumentIfFileExists(arguments, "--server-settings", this.options.Configuration.GetServerSettingsPath());
             var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
             if (addedWhitelist)
@@ -86,6 +91,8 @@ namespace Factoriod.Daemon
                 // Don't start the process if the app is being stopped
                 return;
             }
+
+            await CreateSaveIfNotExists(cancellationToken);
 
             this.logger.LogInformation("Starting factorio process");
 
@@ -134,6 +141,64 @@ namespace Factoriod.Daemon
             }
 
             this.logger.LogWarning("Factorio process error: {error}", e.Data);
+        }
+
+        private async Task CreateSaveIfNotExists(CancellationToken cancellationToken = default)
+        {
+            var savePath = this.options.Configuration.GetSavePath();
+            if (File.Exists(savePath))
+            {
+                return;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            this.logger.LogInformation("Creating save file {path}", savePath);
+
+            var arguments = new List<string>()
+            {
+                "--create",
+                savePath,
+            };
+
+            AddArgumentIfFileExists(arguments, "--map-gen-settings", this.options.MapGeneration.GetMapGenSettingsPath());
+            AddArgumentIfFileExists(arguments, "--map-settings", this.options.MapGeneration.GetMapSettingsPath());
+            if (this.options.MapGeneration.MapGenSeed.HasValue)
+            {
+                arguments.Add("--map-gen-seed");
+                arguments.Add(this.options.MapGeneration.MapGenSeed.Value.ToString());
+            }
+            
+            using var createSaveProcess = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = this.options.Executable.GetExecutablePath(),
+                    Arguments = string.Join(" ", arguments),
+                    WorkingDirectory = this.options.Executable.RootDirectory,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    RedirectStandardInput = true,
+                    CreateNoWindow = true,
+                },
+            };
+
+            createSaveProcess.OutputDataReceived += OnFactorioProcessOutputDataReceived;
+            createSaveProcess.ErrorDataReceived += OnFactorioProcessErrorDataReceived;
+
+            createSaveProcess.Start();
+
+            createSaveProcess.BeginOutputReadLine();
+            createSaveProcess.BeginErrorReadLine();
+
+            await createSaveProcess.WaitForExitAsync(cancellationToken);
+
+            createSaveProcess.CancelOutputRead();
+            createSaveProcess.CancelErrorRead();
         }
     }
 }
