@@ -40,23 +40,16 @@ namespace Factoriod.Daemon
         {
             // /etc/factoriod/server-settings.json
             var arguments = new List<string>();
-            var saveFilePath = this.options.Configuration.GetSave().FullName;
-            var saveFound = AddArgumentIfFileExists(arguments, "--start-server", saveFilePath);
-            if (!saveFound)
-            {
-                this.logger.LogCritical("Save file {path} not found, cannot continue!", saveFilePath);
-                this.lifetime.StopApplication();
-            }
-
-            AddArgumentIfFileExists(arguments, "--server-settings", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerSettingsPath));
-            var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerWhitelistPath));
+            AddArgumentIfFileExists(arguments, "--start-server", this.options.Configuration.GetSavePath());
+            AddArgumentIfFileExists(arguments, "--server-settings", this.options.Configuration.GetServerSettingsPath());
+            var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
             if (addedWhitelist)
             {
                 arguments.Add("--use-server-whitelist");
             }
 
-            AddArgumentIfFileExists(arguments, "--server-banlist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerBanlistPath));
-            AddArgumentIfFileExists(arguments, "--server-adminlist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerAdminlistPath));
+            AddArgumentIfFileExists(arguments, "--server-banlist", this.options.Configuration.GetServerBanlistPath());
+            AddArgumentIfFileExists(arguments, "--server-adminlist", this.options.Configuration.GetServerAdminlistPath());
             AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.ModsRootDirectory);
 
             return string.Join(" ", arguments);
@@ -64,7 +57,6 @@ namespace Factoriod.Daemon
 
         private static bool AddArgumentIfFileExists(List<string> arguments, string option, string path)
         {
-            path = ResolveTilde(path);
             if (File.Exists(path))
             {
                 arguments.Add(option);
@@ -77,7 +69,6 @@ namespace Factoriod.Daemon
 
         private static bool AddArgumentIfDirectoryExists(List<string> arguments, string option, string path)
         {
-            path = ResolveTilde(path);
             if (Directory.Exists(path))
             {
                 arguments.Add(option);
@@ -87,8 +78,6 @@ namespace Factoriod.Daemon
 
             return false;
         }
-
-        private static string ResolveTilde(string path) => path.Replace("~", Environment.GetEnvironmentVariable("HOME"));
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {

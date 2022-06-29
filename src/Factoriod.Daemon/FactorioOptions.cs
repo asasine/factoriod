@@ -23,7 +23,19 @@ namespace Factoriod.Daemon.Options
         public string ServerBanlistPath { get; set; } = null!;
         public string ServerAdminlistPath { get; set; } = null!;
 
-        public FileInfo GetSave()
-            => new FileInfo(Path.Join(this.RootDirectory, this.SavesDirectory, this.Save)).ResolveTilde();
+        public string GetSavePath()
+            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.SavesDirectory, this.Save));
+
+        public string GetServerSettingsPath()
+            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerSettingsPath));
+
+        public string GetServerWhitelistPath()
+            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerWhitelistPath));
+
+        public string GetServerBanlistPath()
+            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerBanlistPath));
+        
+        public string GetServerAdminlistPath()
+            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerAdminlistPath));
     }
 }
