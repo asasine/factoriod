@@ -7,11 +7,13 @@ namespace Factoriod.Fetcher
 {
     public class Program
     {
-        public static async Task Main()
+        public static async Task Main(string[] args)
         {
+            var includeExperimental = args.Length > 0 && args[0] == "--include-experimental";
+
             using var client = new HttpClient();
             var versionFetcher = new VersionFetcher(client);
-            var version = await versionFetcher.GetLatestHeadlessVersionAsync();
+            var version = await versionFetcher.GetLatestHeadlessVersionAsync(includeExperimental);
             if (version == null)
             {
                 Console.WriteLine("No version found");

@@ -46,9 +46,9 @@ namespace Factoriod.Fetcher
             }
         }
 
-        public async Task<FactorioVersion?> GetLatestHeadlessVersionAsync(CancellationToken cancellationToken = default)
+        public async Task<FactorioVersion?> GetLatestHeadlessVersionAsync(bool includeExperimental = false, CancellationToken cancellationToken = default)
         {
-            var versions = this.GetVersionsAsync(false, cancellationToken);
+            var versions = this.GetVersionsAsync(includeExperimental, cancellationToken);
             if (versions == null)
             {
                 return null;
