@@ -7,7 +7,7 @@ namespace Factoriod.Daemon
     {
         public static async Task Main(string[] args)
         {
-            IHost host = Host.CreateDefaultBuilder(args)
+            var host = Host.CreateDefaultBuilder(args)
                 .UseContentRoot(Path.GetDirectoryName(typeof(Program).Assembly.Location))
                 .ConfigureServices((context, services) =>
                 {

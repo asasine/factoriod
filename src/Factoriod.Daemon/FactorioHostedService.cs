@@ -16,16 +16,15 @@ namespace Factoriod.Daemon
             this.logger = logger;
             this.options = options.Value;
 
-            this.logger.LogInformation("RootDirectory: {RootDirectory}", this.options.RootDirectory);
-            this.logger.LogInformation("ExecutableRelativePath: {ExecutableRelativePath}", this.options.ExecutableRelativeDirectory);
-            var factorioPath = Path.Combine(this.options.RootDirectory, this.options.ExecutableRelativeDirectory, "factorio");
-            this.logger.LogInformation("Using factorio executable at {path}", factorioPath);
+            var factorioExecutablePath = Path.Combine(this.options.RootDirectory, this.options.ExecutableRelativePath);
+            this.logger.LogInformation("Using factorio executable at {path}", factorioExecutablePath);
             this.factorioProcess = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = factorioPath,
-                    Arguments = "--version",
+                    FileName = factorioExecutablePath,
+                    Arguments = "--start-server saves/save1.zip",
+                    WorkingDirectory = this.options.RootDirectory,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -40,6 +39,13 @@ namespace Factoriod.Daemon
             this.logger.LogInformation("Starting factorio process");
             this.factorioProcess.Start();
             await this.factorioProcess.WaitForExitAsync(cancellationToken);
+        }
+
+        public override void Dispose()
+        {
+            this.factorioProcess.Dispose();
+            base.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }
