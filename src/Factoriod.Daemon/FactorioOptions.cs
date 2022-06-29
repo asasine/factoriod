@@ -22,5 +22,8 @@ namespace Factoriod.Daemon.Options
         public string ServerWhitelistPath { get; set; } = null!;
         public string ServerBanlistPath { get; set; } = null!;
         public string ServerAdminlistPath { get; set; } = null!;
+
+        public FileInfo GetSave()
+            => new FileInfo(Path.Join(this.RootDirectory, this.SavesDirectory, this.Save)).ResolveTilde();
     }
 }

@@ -40,7 +40,7 @@ namespace Factoriod.Daemon
         {
             // /etc/factoriod/server-settings.json
             var arguments = new List<string>();
-            var saveFilePath = ResolveTilde(Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.SavesDirectory, this.options.Configuration.Save));
+            var saveFilePath = this.options.Configuration.GetSave().FullName;
             var saveFound = AddArgumentIfFileExists(arguments, "--start-server", saveFilePath);
             if (!saveFound)
             {
