@@ -37,8 +37,21 @@ namespace Factoriod.Daemon
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             this.logger.LogInformation("Starting factorio process");
+
+            this.factorioProcess.OutputDataReceived += OnFactorioProcessOutputDataReceived;
+            this.factorioProcess.ErrorDataReceived += OnFactorioProcessErrorDataReceived;
+
             this.factorioProcess.Start();
+
+            this.factorioProcess.BeginOutputReadLine();
+            this.factorioProcess.BeginErrorReadLine();
+
             await this.factorioProcess.WaitForExitAsync(cancellationToken);
+
+            this.factorioProcess.CancelOutputRead();
+            this.factorioProcess.CancelErrorRead();
+
+            this.logger.LogInformation("Factorio process exit code: {exitCode}", this.factorioProcess.ExitCode);
         }
 
         public override void Dispose()
@@ -46,6 +59,26 @@ namespace Factoriod.Daemon
             this.factorioProcess.Dispose();
             base.Dispose();
             GC.SuppressFinalize(this);
+        }
+
+        private void OnFactorioProcessOutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data is null)
+            {
+                return;
+            }
+            
+            this.logger.LogInformation("Factorio process output: {output}", e.Data);
+        }
+
+        private void OnFactorioProcessErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data is null)
+            {
+                return;
+            }
+
+            this.logger.LogWarning("Factorio process error: {error}", e.Data);
         }
     }
 }
