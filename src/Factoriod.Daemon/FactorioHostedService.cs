@@ -47,9 +47,10 @@ namespace Factoriod.Daemon
             {
                 arguments.Add("--use-server-whitelist");
             }
-            
+
             AddArgumentIfFileExists(arguments, "--server-banlist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerBanlistPath));
             AddArgumentIfFileExists(arguments, "--server-adminlist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerAdminlistPath));
+            AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.ModsRootDirectory);
 
             return string.Join(" ", arguments);
         }
@@ -58,6 +59,19 @@ namespace Factoriod.Daemon
         {
             path = ResolveTilde(path);
             if (File.Exists(path))
+            {
+                arguments.Add(option);
+                arguments.Add(path);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool AddArgumentIfDirectoryExists(List<string> arguments, string option, string path)
+        {
+            path = ResolveTilde(path);
+            if (Directory.Exists(path))
             {
                 arguments.Add(option);
                 arguments.Add(path);

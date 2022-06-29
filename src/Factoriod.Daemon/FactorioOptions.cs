@@ -4,6 +4,7 @@ namespace Factoriod.Daemon.Options
     {
         public FactorioExecutable Executable { get; set; } = null!;
         public FactorioConfiguration Configuration { get; set; } = null!;
+        public string ModsRootDirectory { get; set; } = null!;
     }
 
     public sealed class FactorioExecutable
