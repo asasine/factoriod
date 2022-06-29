@@ -39,15 +39,32 @@ namespace Factoriod.Daemon
         private string CreateArguments()
         {
             // /etc/factoriod/server-settings.json
-            var arguments = new List<string>
+            var arguments = new List<string>();
+            AddArgumentIfFileExists(arguments, "--start-server", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.SavesDirectory, "save1.zip"));
+            AddArgumentIfFileExists(arguments, "--server-settings", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerSettingsPath));
+            var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerWhitelistPath));
+            if (addedWhitelist)
             {
-                "--start-server",
-                ResolveTilde(Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.SavesDirectory, "save1.zip")),
-                "--server-settings",
-                ResolveTilde(Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerSettingsPath)),
-            };
+                arguments.Add("--use-server-whitelist");
+            }
+            
+            AddArgumentIfFileExists(arguments, "--server-banlist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerBanlistPath));
+            AddArgumentIfFileExists(arguments, "--server-adminlist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerAdminlistPath));
 
             return string.Join(" ", arguments);
+        }
+
+        private static bool AddArgumentIfFileExists(List<string> arguments, string option, string path)
+        {
+            path = ResolveTilde(path);
+            if (File.Exists(path))
+            {
+                arguments.Add(option);
+                arguments.Add(path);
+                return true;
+            }
+
+            return false;
         }
 
         private static string ResolveTilde(string path) => path.Replace("~", Environment.GetEnvironmentVariable("HOME"));
