@@ -130,7 +130,7 @@ namespace Factoriod.Daemon
                 return;
             }
             
-            this.logger.LogInformation("Factorio process output: {output}", e.Data);
+            this.logger.LogDebug("Factorio process output: {output}", e.Data);
         }
 
         private void OnFactorioProcessErrorDataReceived(object sender, DataReceivedEventArgs e)
