@@ -129,8 +129,13 @@ namespace Factoriod.Daemon
             {
                 return;
             }
-            
+
             this.logger.LogDebug("Factorio process output: {output}", e.Data);
+
+            if (e.Data.Contains("changing state from(CreatingGame) to(InGame)"))
+            {
+                this.logger.LogInformation("Factorio process started");
+            }
         }
 
         private void OnFactorioProcessErrorDataReceived(object sender, DataReceivedEventArgs e)
