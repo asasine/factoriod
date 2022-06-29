@@ -42,13 +42,15 @@ namespace Factoriod.Daemon
             var arguments = new List<string>
             {
                 "--start-server",
-                Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.SavesDirectory, "save1.zip"),
+                ResolveTilde(Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.SavesDirectory, "save1.zip")),
                 "--server-settings",
-                Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerSettingsPath),
+                ResolveTilde(Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerSettingsPath)),
             };
 
             return string.Join(" ", arguments);
         }
+
+        private static string ResolveTilde(string path) => path.Replace("~", Environment.GetEnvironmentVariable("HOME"));
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
