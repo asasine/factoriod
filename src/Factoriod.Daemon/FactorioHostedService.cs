@@ -8,12 +8,14 @@ namespace Factoriod.Daemon
     public class FactorioHostedService : BackgroundService
     {
         private readonly ILogger logger;
+        private readonly IHostApplicationLifetime lifetime;
         private readonly Options.Factorio options;
         private readonly Process factorioProcess;
 
-        public FactorioHostedService(ILogger<FactorioHostedService> logger, IOptions<Options.Factorio> options)
+        public FactorioHostedService(ILogger<FactorioHostedService> logger, IOptions<Options.Factorio> options, IHostApplicationLifetime lifetime)
         {
             this.logger = logger;
+            this.lifetime = lifetime;
             this.options = options.Value;
 
             var factorioExecutablePath = Path.Combine(this.options.Executable.RootDirectory, this.options.Executable.ExecutableName);
@@ -65,7 +67,11 @@ namespace Factoriod.Daemon
             this.factorioProcess.CancelOutputRead();
             this.factorioProcess.CancelErrorRead();
 
-            this.logger.LogInformation("Factorio process exit code: {exitCode}", this.factorioProcess.ExitCode);
+            if (!cancellationToken.IsCancellationRequested && this.factorioProcess.ExitCode != 0)
+            {
+                this.logger.LogError("Factorio process exited early with code {exitCode}, shutting down", this.factorioProcess.ExitCode);
+                this.lifetime.StopApplication();
+            }
         }
 
         public override void Dispose()
