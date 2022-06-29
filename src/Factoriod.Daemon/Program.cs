@@ -13,7 +13,7 @@ namespace Factoriod.Daemon
                 {
                     services.AddHostedService<FactorioHostedService>();
 
-                    services.Configure<FactorioOptions>(context.Configuration.GetSection("Factorio"));
+                    services.Configure<Options.Factorio>(context.Configuration.GetSection("Factorio"));
                 })
                 .Build();
 

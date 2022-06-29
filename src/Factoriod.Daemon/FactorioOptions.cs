@@ -1,8 +1,21 @@
-namespace Factoriod.Daemon
+namespace Factoriod.Daemon.Options
 {
-    public sealed class FactorioOptions
+    public sealed class Factorio
+    {
+        public FactorioExecutable Executable { get; set; } = null!;
+        public FactorioConfiguration Configuration { get; set; } = null!;
+    }
+
+    public sealed class FactorioExecutable
     {
         public string RootDirectory { get; set; } = null!;
-        public string ExecutableRelativePath { get; set; } = null!;
+        public string ExecutableName { get; set; } = null!;
+    }
+
+    public sealed class FactorioConfiguration
+    {
+        public string RootDirectory { get; set; } = null!;
+        public string SavesDirectory { get; set; } = null!;
+        public string ServerSettingsPath { get; set; } = null!;
     }
 }

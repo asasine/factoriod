@@ -8,23 +8,23 @@ namespace Factoriod.Daemon
     public class FactorioHostedService : BackgroundService
     {
         private readonly ILogger logger;
-        private readonly FactorioOptions options;
+        private readonly Options.Factorio options;
         private readonly Process factorioProcess;
 
-        public FactorioHostedService(ILogger<FactorioHostedService> logger, IOptions<FactorioOptions> options)
+        public FactorioHostedService(ILogger<FactorioHostedService> logger, IOptions<Options.Factorio> options)
         {
             this.logger = logger;
             this.options = options.Value;
 
-            var factorioExecutablePath = Path.Combine(this.options.RootDirectory, this.options.ExecutableRelativePath);
+            var factorioExecutablePath = Path.Combine(this.options.Executable.RootDirectory, this.options.Executable.ExecutableName);
             this.logger.LogInformation("Using factorio executable at {path}", factorioExecutablePath);
             this.factorioProcess = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = factorioExecutablePath,
-                    Arguments = "--start-server saves/save1.zip",
-                    WorkingDirectory = this.options.RootDirectory,
+                    Arguments = CreateArguments(),
+                    WorkingDirectory = this.options.Executable.RootDirectory,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -32,6 +32,20 @@ namespace Factoriod.Daemon
                     CreateNoWindow = true,
                 },
             };
+        }
+
+        private string CreateArguments()
+        {
+            // /etc/factoriod/server-settings.json
+            var arguments = new List<string>
+            {
+                "--start-server",
+                Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.SavesDirectory, "save1.zip"),
+                "--server-settings",
+                Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerSettingsPath),
+            };
+
+            return string.Join(" ", arguments);
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
