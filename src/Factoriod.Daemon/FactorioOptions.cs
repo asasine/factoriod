@@ -17,6 +17,7 @@ namespace Factoriod.Daemon.Options
     {
         public string RootDirectory { get; set; } = null!;
         public string SavesDirectory { get; set; } = null!;
+        public string Save { get; set; } = null!;
         public string ServerSettingsPath { get; set; } = null!;
         public string ServerWhitelistPath { get; set; } = null!;
         public string ServerBanlistPath { get; set; } = null!;
