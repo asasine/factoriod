@@ -40,7 +40,14 @@ namespace Factoriod.Daemon
         {
             // /etc/factoriod/server-settings.json
             var arguments = new List<string>();
-            AddArgumentIfFileExists(arguments, "--start-server", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.SavesDirectory, "save1.zip"));
+            var saveFilePath = ResolveTilde(Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.SavesDirectory, this.options.Configuration.Save));
+            var saveFound = AddArgumentIfFileExists(arguments, "--start-server", saveFilePath);
+            if (!saveFound)
+            {
+                this.logger.LogCritical("Save file {path} not found, cannot continue!", saveFilePath);
+                this.lifetime.StopApplication();
+            }
+
             AddArgumentIfFileExists(arguments, "--server-settings", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerSettingsPath));
             var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", Path.Join(this.options.Configuration.RootDirectory, this.options.Configuration.ServerWhitelistPath));
             if (addedWhitelist)
@@ -85,6 +92,12 @@ namespace Factoriod.Daemon
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // Don't start the process if the app is being stopped
+                return;
+            }
+
             this.logger.LogInformation("Starting factorio process");
 
             this.factorioProcess.OutputDataReceived += OnFactorioProcessOutputDataReceived;
