@@ -10,54 +10,12 @@ namespace Factoriod.Daemon
         private readonly ILogger logger;
         private readonly IHostApplicationLifetime lifetime;
         private readonly Options.Factorio options;
-        private readonly Process factorioProcess;
 
         public FactorioHostedService(ILogger<FactorioHostedService> logger, IOptions<Options.Factorio> options, IHostApplicationLifetime lifetime)
         {
             this.logger = logger;
             this.lifetime = lifetime;
             this.options = options.Value;
-
-            var factorioExecutablePath = this.options.Executable.GetExecutablePath();
-            this.logger.LogInformation("Using factorio executable at {path}", factorioExecutablePath);
-            this.factorioProcess = new Process()
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = factorioExecutablePath,
-                    Arguments = CreateArguments(),
-                    WorkingDirectory = this.options.Executable.RootDirectory,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true,
-                    CreateNoWindow = true,
-                },
-            };
-        }
-
-        private string CreateArguments()
-        {
-            // /etc/factoriod/server-settings.json
-            var arguments = new List<string>()
-            {
-                // save path doesn't get existence validation because we create it later if it doesn't exist
-                "--start-server",
-                this.options.Configuration.GetSavePath(),
-            };
-
-            AddArgumentIfFileExists(arguments, "--server-settings", this.options.Configuration.GetServerSettingsPath());
-            var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
-            if (addedWhitelist)
-            {
-                arguments.Add("--use-server-whitelist");
-            }
-
-            AddArgumentIfFileExists(arguments, "--server-banlist", this.options.Configuration.GetServerBanlistPath());
-            AddArgumentIfFileExists(arguments, "--server-adminlist", this.options.Configuration.GetServerAdminlistPath());
-            AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.ModsRootDirectory);
-
-            return string.Join(" ", arguments);
         }
 
         private static bool AddArgumentIfFileExists(List<string> arguments, string option, string path)
@@ -91,36 +49,13 @@ namespace Factoriod.Daemon
                 // Don't start the process if the app is being stopped
                 return;
             }
-
-            await CreateSaveIfNotExists(cancellationToken);
-
-            this.logger.LogInformation("Starting factorio process");
-
-            this.factorioProcess.OutputDataReceived += OnFactorioProcessOutputDataReceived;
-            this.factorioProcess.ErrorDataReceived += OnFactorioProcessErrorDataReceived;
-
-            this.factorioProcess.Start();
-
-            this.factorioProcess.BeginOutputReadLine();
-            this.factorioProcess.BeginErrorReadLine();
-
-            await this.factorioProcess.WaitForExitAsync(cancellationToken);
-
-            this.factorioProcess.CancelOutputRead();
-            this.factorioProcess.CancelErrorRead();
-
-            if (!cancellationToken.IsCancellationRequested && this.factorioProcess.ExitCode != 0)
+            
+            var exitCode = await StartServerAsync(cancellationToken);
+            if (!cancellationToken.IsCancellationRequested && exitCode != 0)
             {
-                this.logger.LogError("Factorio process exited early with code {exitCode}, shutting down", this.factorioProcess.ExitCode);
+                this.logger.LogError("Factorio process exited early with code {exitCode}, shutting down", exitCode);
                 this.lifetime.StopApplication();
             }
-        }
-
-        public override void Dispose()
-        {
-            this.factorioProcess.Dispose();
-            base.Dispose();
-            GC.SuppressFinalize(this);
         }
 
         private void OnFactorioProcessOutputDataReceived(object sender, DataReceivedEventArgs e)
@@ -146,6 +81,77 @@ namespace Factoriod.Daemon
             }
 
             this.logger.LogWarning("Factorio process error: {error}", e.Data);
+        }
+
+        private async Task StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            
+            process.OutputDataReceived += this.OnFactorioProcessOutputDataReceived;
+            process.ErrorDataReceived += this.OnFactorioProcessErrorDataReceived;
+
+            process.Start();
+
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            await process.WaitForExitAsync(cancellationToken);
+
+            process.CancelOutputRead();
+            process.CancelErrorRead();
+        }
+
+        private async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
+        {
+            this.logger.LogInformation("Starting factorio process");
+
+            var arguments = new List<string>();
+            var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Configuration.GetSavePath());
+            if (!addedStartServer)
+            {
+                this.logger.LogInformation("No save file found, creating one");
+                await CreateSaveIfNotExists(cancellationToken);
+
+                // try again
+                addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Configuration.GetSavePath());
+                if (!addedStartServer)
+                {
+                    this.logger.LogError("Unable to find save file {path}", this.options.Configuration.GetSavePath());
+                    return 1;
+                }
+            }
+
+            AddArgumentIfFileExists(arguments, "--server-settings", this.options.Configuration.GetServerSettingsPath());
+            var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
+            if (addedWhitelist)
+            {
+                arguments.Add("--use-server-whitelist");
+            }
+
+            AddArgumentIfFileExists(arguments, "--server-banlist", this.options.Configuration.GetServerBanlistPath());
+            AddArgumentIfFileExists(arguments, "--server-adminlist", this.options.Configuration.GetServerAdminlistPath());
+            AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.ModsRootDirectory);
+
+            using var factorioProcess = new Process()
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = this.options.Executable.GetExecutablePath(),
+                    Arguments = string.Join(" ", arguments),
+                    WorkingDirectory = this.options.Executable.RootDirectory,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    RedirectStandardInput = true,
+                    CreateNoWindow = true,
+                },
+            };
+
+            await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
+            return factorioProcess.ExitCode;
         }
 
         private async Task CreateSaveIfNotExists(CancellationToken cancellationToken = default)
@@ -192,18 +198,7 @@ namespace Factoriod.Daemon
                 },
             };
 
-            createSaveProcess.OutputDataReceived += OnFactorioProcessOutputDataReceived;
-            createSaveProcess.ErrorDataReceived += OnFactorioProcessErrorDataReceived;
-
-            createSaveProcess.Start();
-
-            createSaveProcess.BeginOutputReadLine();
-            createSaveProcess.BeginErrorReadLine();
-
-            await createSaveProcess.WaitForExitAsync(cancellationToken);
-
-            createSaveProcess.CancelOutputRead();
-            createSaveProcess.CancelErrorRead();
+            await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
         }
     }
 }
