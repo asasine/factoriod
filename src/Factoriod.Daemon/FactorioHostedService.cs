@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,30 +19,6 @@ namespace Factoriod.Daemon
             this.options = options.Value;
         }
 
-        private static bool AddArgumentIfFileExists(List<string> arguments, string option, string path)
-        {
-            if (File.Exists(path))
-            {
-                arguments.Add(option);
-                arguments.Add(path);
-                return true;
-            }
-
-            return false;
-        }
-
-        private static bool AddArgumentIfDirectoryExists(List<string> arguments, string option, string path)
-        {
-            if (Directory.Exists(path))
-            {
-                arguments.Add(option);
-                arguments.Add(path);
-                return true;
-            }
-
-            return false;
-        }
-
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -49,6 +26,15 @@ namespace Factoriod.Daemon
                 // Don't start the process if the app is being stopped
                 return;
             }
+
+            var currentVersion = await GetCurrentVersionAsync(cancellationToken);
+            if (currentVersion == null)
+            {
+                this.logger.LogInformation("No Factorio version found");
+                return;
+            }
+
+            this.logger.LogInformation("Current Factorio version: {version}", currentVersion);
             
             var exitCode = await StartServerAsync(cancellationToken);
             if (!cancellationToken.IsCancellationRequested && exitCode != 0)
@@ -56,52 +42,6 @@ namespace Factoriod.Daemon
                 this.logger.LogError("Factorio process exited early with code {exitCode}, shutting down", exitCode);
                 this.lifetime.StopApplication();
             }
-        }
-
-        private void OnFactorioProcessOutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (e.Data is null)
-            {
-                return;
-            }
-
-            this.logger.LogDebug("Factorio process output: {output}", e.Data);
-
-            if (e.Data.Contains("changing state from(CreatingGame) to(InGame)"))
-            {
-                this.logger.LogInformation("Factorio process started");
-            }
-        }
-
-        private void OnFactorioProcessErrorDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (e.Data is null)
-            {
-                return;
-            }
-
-            this.logger.LogWarning("Factorio process error: {error}", e.Data);
-        }
-
-        private async Task StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-            
-            process.OutputDataReceived += this.OnFactorioProcessOutputDataReceived;
-            process.ErrorDataReceived += this.OnFactorioProcessErrorDataReceived;
-
-            process.Start();
-
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            await process.WaitForExitAsync(cancellationToken);
-
-            process.CancelOutputRead();
-            process.CancelErrorRead();
         }
 
         private async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
@@ -199,6 +139,109 @@ namespace Factoriod.Daemon
             };
 
             await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
+        }
+
+        private async Task<Version?> GetCurrentVersionAsync(CancellationToken cancellationToken = default)
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = this.options.Executable.GetExecutablePath(),
+                    Arguments = "--version",
+                    WorkingDirectory = this.options.Executable.RootDirectory,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    RedirectStandardInput = true,
+                    CreateNoWindow = true,
+                },
+            };
+
+            process.Start();
+            await process.WaitForExitAsync(cancellationToken);
+            // version info is on the first line
+            var versionLine = await process.StandardOutput.ReadLineAsync();
+            if (versionLine == null)
+            {
+                return null;
+            }
+
+            // a more complete regex, if distro and release are needed later
+            // var versionMatch = Regex.Match(versionLine, @"^Version: (?<version>\d+\.\d+\.\d+) \(build \d+, (?<distro>win64|win64-manual|win32|win32-manual|osx|linux64|linux32), (?<release>alpha|demo|headless)\)$");
+            var versionMatch = Regex.Match(versionLine, @"^Version: (?<version>\d+\.\d+\.\d+)");
+            var version = versionMatch.Success ? new Version(versionMatch.Groups["version"].Value) : null;
+            return version;
+        }
+
+        private static bool AddArgumentIfFileExists(List<string> arguments, string option, string path)
+        {
+            if (File.Exists(path))
+            {
+                arguments.Add(option);
+                arguments.Add(path);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool AddArgumentIfDirectoryExists(List<string> arguments, string option, string path)
+        {
+            if (Directory.Exists(path))
+            {
+                arguments.Add(option);
+                arguments.Add(path);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void OnFactorioProcessOutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data is null)
+            {
+                return;
+            }
+
+            this.logger.LogDebug("Factorio process output: {output}", e.Data);
+
+            if (e.Data.Contains("changing state from(CreatingGame) to(InGame)"))
+            {
+                this.logger.LogInformation("Factorio process started");
+            }
+        }
+
+        private void OnFactorioProcessErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data is null)
+            {
+                return;
+            }
+
+            this.logger.LogWarning("Factorio process error: {error}", e.Data);
+        }
+
+        private async Task StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            
+            process.OutputDataReceived += this.OnFactorioProcessOutputDataReceived;
+            process.ErrorDataReceived += this.OnFactorioProcessErrorDataReceived;
+
+            process.Start();
+
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            await process.WaitForExitAsync(cancellationToken);
+
+            process.CancelOutputRead();
+            process.CancelErrorRead();
         }
     }
 }
