@@ -27,24 +27,37 @@ namespace Factoriod.Daemon
                 return;
             }
 
-            var currentVersion = await GetCurrentVersionAsync(cancellationToken);
-            if (currentVersion == null)
+            // download (or use cached) executable matching the configured version
+            // start the server
+
+            var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
+            if (factorioDirectory == null)
             {
-                this.logger.LogInformation("No Factorio version found");
+                this.logger.LogWarning("Unable to find Factorio directory");
+                this.lifetime.StopApplication();
                 return;
             }
 
-            this.logger.LogInformation("Current Factorio version: {version}", currentVersion);
-            
-            var exitCode = await StartServerAsync(cancellationToken);
+            var exitCode = await StartServerAsync(factorioDirectory, cancellationToken);
             if (!cancellationToken.IsCancellationRequested && exitCode != 0)
             {
                 this.logger.LogError("Factorio process exited early with code {exitCode}, shutting down", exitCode);
                 this.lifetime.StopApplication();
+                return;
             }
         }
 
-        private async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Gets the path to the Factorio directory to use.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token to stop the process early.</param>
+        /// <returns>The path to the Factorio directory.</returns>
+        private Task<string?> GetFactorioDirectoryAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<string?>(this.options.Executable.RootDirectory);
+        }
+
+        private async Task<int> StartServerAsync(string factorioDirectory, CancellationToken cancellationToken = default)
         {
             this.logger.LogInformation("Starting factorio process");
 
@@ -53,7 +66,7 @@ namespace Factoriod.Daemon
             if (!addedStartServer)
             {
                 this.logger.LogInformation("No save file found, creating one");
-                await CreateSaveIfNotExists(cancellationToken);
+                await CreateSaveIfNotExists(factorioDirectory, cancellationToken);
 
                 // try again
                 addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Configuration.GetSavePath());
@@ -79,9 +92,9 @@ namespace Factoriod.Daemon
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = this.options.Executable.GetExecutablePath(),
+                    FileName = Path.Join(factorioDirectory, this.options.Executable.ExecutableDirectory, this.options.Executable.ExecutableName),
                     Arguments = string.Join(" ", arguments),
-                    WorkingDirectory = this.options.Executable.RootDirectory,
+                    WorkingDirectory = factorioDirectory,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -94,7 +107,7 @@ namespace Factoriod.Daemon
             return factorioProcess.ExitCode;
         }
 
-        private async Task CreateSaveIfNotExists(CancellationToken cancellationToken = default)
+        private async Task CreateSaveIfNotExists(string factorioDirectory, CancellationToken cancellationToken = default)
         {
             var savePath = this.options.Configuration.GetSavePath();
             if (File.Exists(savePath))
@@ -127,9 +140,9 @@ namespace Factoriod.Daemon
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = this.options.Executable.GetExecutablePath(),
+                    FileName = this.options.Executable.GetExecutablePath(factorioDirectory),
                     Arguments = string.Join(" ", arguments),
-                    WorkingDirectory = this.options.Executable.RootDirectory,
+                    WorkingDirectory = factorioDirectory,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,

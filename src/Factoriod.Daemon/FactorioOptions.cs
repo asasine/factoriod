@@ -14,8 +14,9 @@ namespace Factoriod.Daemon.Options
         public string ExecutableDirectory { get; set; } = null!;
         public string ExecutableName { get; set; } = null!;
 
-        public string GetExecutablePath()
-            => Path.Combine(this.RootDirectory, this.ExecutableDirectory, this.ExecutableName);
+        public string GetExecutablePath() => GetExecutablePath(this.RootDirectory);
+        public string GetExecutablePath(string rootDirectory)
+            => Path.Combine(rootDirectory, this.ExecutableDirectory, this.ExecutableName);
     }
 
     public sealed class FactorioConfiguration
