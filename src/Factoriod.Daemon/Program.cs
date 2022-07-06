@@ -1,3 +1,4 @@
+﻿using Factoriod.Fetcher;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,6 +19,8 @@ namespace Factoriod.Daemon
                 .ConfigureServices((context, services) =>
                 {
                     services.AddHostedService<FactorioHostedService>();
+                    services.AddHttpClient<VersionFetcher>();
+                    services.AddHttpClient<ReleaseFetcher>();
 
                     services.Configure<Options.Factorio>(context.Configuration.GetSection("Factorio"));
                 })

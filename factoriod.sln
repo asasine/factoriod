@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Fetcher", "src\Fa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Daemon", "src\Factoriod.Daemon\Factoriod.Daemon.csproj", "{66DDB607-CDE3-4590-B92B-48C710FBBD26}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Utilities", "src\Factoriod.Utilities\Factoriod.Utilities.csproj", "{3DC50CAB-E312-4764-895F-15C5FCE9A267}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,9 +28,14 @@ Global
 		{66DDB607-CDE3-4590-B92B-48C710FBBD26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66DDB607-CDE3-4590-B92B-48C710FBBD26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66DDB607-CDE3-4590-B92B-48C710FBBD26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DC50CAB-E312-4764-895F-15C5FCE9A267}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DC50CAB-E312-4764-895F-15C5FCE9A267}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DC50CAB-E312-4764-895F-15C5FCE9A267}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DC50CAB-E312-4764-895F-15C5FCE9A267}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1632E8E9-8308-4C77-A608-561A32C0A3E8} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
 		{66DDB607-CDE3-4590-B92B-48C710FBBD26} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
+		{3DC50CAB-E312-4764-895F-15C5FCE9A267} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
 	EndGlobalSection
 EndGlobal

@@ -1,21 +1,26 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Factoriod.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Factoriod.Fetcher
 {
     public class VersionFetcher
     {
+        private readonly ILogger logger;
         private readonly HttpClient client;
 
         private const string VersionUrl = "https://factorio.com/api/latest-releases";
 
-        public VersionFetcher(HttpClient client)
+        public VersionFetcher(ILogger<VersionFetcher> logger, HttpClient client)
         {
+            this.logger = logger;
             this.client = client;
         }
 
@@ -55,6 +60,52 @@ namespace Factoriod.Fetcher
             }
 
             return await versions.Where(version => version.Build == ReleaseBuild.Headless).FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<IEnumerable<(FactorioVersion version, Distro distro, DirectoryInfo path)>?> GetVersionsOnDiskAsync(DirectoryInfo directory, CancellationToken cancellationToken = default)
+        {
+            directory = directory.ResolveTilde();
+            var versions = GetVersionsAsync(false, cancellationToken);
+            IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions;
+            if (versions == null)
+            {
+                latestStableVersions = new Dictionary<ReleaseBuild, Version>();
+            }
+            else
+            {
+                latestStableVersions = await versions.ToDictionaryAsync(factorioVersion => factorioVersion.Build, factorioVersion => factorioVersion.Version, cancellationToken);
+            }
+
+            return GetVersionsOnDisk(directory, latestStableVersions);
+        }
+
+        public IEnumerable<(FactorioVersion version, Distro distro, DirectoryInfo path)> GetVersionsOnDisk(DirectoryInfo directory, IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions)
+        {
+            directory = directory.ResolveTilde();
+            this.logger.LogDebug("Scanning {directory}", directory.FullName);
+            if (!directory.Exists)
+            {
+                yield break;
+            }
+
+            foreach (var versionDirectory in directory.EnumerateDirectories())
+            {
+                var version = Version.Parse(versionDirectory.Name);
+                foreach (var buildDirectory in versionDirectory.EnumerateDirectories())
+                {
+                    var releaseBuild = new ReleaseBuild(buildDirectory.Name);
+                    var stable = latestStableVersions.TryGetValue(releaseBuild, out var latestStable) && version <= latestStable;
+                    var factorioVersion = new FactorioVersion(version, releaseBuild, stable);
+                    foreach (var distroDirectory in buildDirectory.EnumerateDirectories())
+                    {
+                        if (Distro.TryParse(distroDirectory.Name, out var distro))
+                        {
+                            var factorioDirectory = new DirectoryInfo(Path.Combine(distroDirectory.FullName, "factorio")).ResolveTilde();
+                            yield return (factorioVersion, distro, factorioDirectory);
+                        }
+                    }
+                }
+            }
         }
     }
 }
