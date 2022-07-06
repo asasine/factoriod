@@ -4,29 +4,33 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Factoriod.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Factoriod.Fetcher
 {
     public class ReleaseFetcher
     {
+        private readonly ILogger logger;
         private readonly HttpClient client;
 
-        public ReleaseFetcher(HttpClient client)
+        public ReleaseFetcher(ILogger<ReleaseFetcher> logger, HttpClient client)
         {
+            this.logger = logger;
             this.client = client;
         }
 
         public async Task<DirectoryInfo?> DownloadToAsync(FactorioVersion version, Distro distro, DirectoryInfo outputDirectory, CancellationToken cancellationToken = default)
         {
-            var versionedOutputDirectory = Path.Join(outputDirectory.FullName, version.Version.ToString(), version.Build.ToString(), Distro.Linux64.ToString());
+            var versionedOutputDirectory = Path.Combine(outputDirectory.ResolveTilde().FullName, version.Version.ToString(), version.Build.ToString(), Distro.Linux64.ToString());
             Directory.CreateDirectory(versionedOutputDirectory);
-            var outputFile = new FileInfo(Path.Join(versionedOutputDirectory, "factorio.tar.xz"));
+            var outputFile = new FileInfo(Path.Combine(versionedOutputDirectory, "factorio.tar.xz"));
 
-            Console.WriteLine($"Downloading to {outputDirectory}");
+            this.logger.LogDebug("Downloading to {outputDirectory}", outputDirectory);
 
             if (!outputFile.Exists)
             {
-                Console.WriteLine($"File does not exists, downloading");
+                this.logger.LogDebug("File does not exists, downloading");
                 var downloadUrl = GetDownloadUrl(version, distro);
                 using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
                 response.EnsureSuccessStatusCode();
@@ -39,7 +43,7 @@ namespace Factoriod.Fetcher
 
             if (outputFile.Directory == null)
             {
-                Console.WriteLine($"Could not find directory of {outputFile}");
+                this.logger.LogDebug("Could not find directory of {outputFile}", outputFile);
                 return null;
             }
 
@@ -50,9 +54,9 @@ namespace Factoriod.Fetcher
             => $"https://factorio.com/get-download/{version.Version}/{version.Build}/{distro}";
 
             
-        private static async Task<DirectoryInfo?> ExtractAsync(FileInfo input, DirectoryInfo output, CancellationToken cancellationToken = default)
+        private async Task<DirectoryInfo?> ExtractAsync(FileInfo input, DirectoryInfo output, CancellationToken cancellationToken = default)
         {
-            Console.WriteLine($"Extracting {input} to {output}");
+            this.logger.LogDebug("Extracting {input} to {output}", input, output);
             output.Create();
 
             using var tarProcess = Process.Start(new ProcessStartInfo
@@ -66,20 +70,20 @@ namespace Factoriod.Fetcher
 
             if (tarProcess == null)
             {
-                Console.WriteLine("Could not start tar process");
+                this.logger.LogWarning("Could not start tar process");
                 return null;
             }
 
             await tarProcess.WaitForExitAsync(cancellationToken);
             if (tarProcess.ExitCode != 0)
             {
-                Console.WriteLine($"Tar process exited with code {tarProcess.ExitCode}");
-                Console.WriteLine($"stdout:\n{tarProcess.StandardOutput.ReadToEnd()}");
-                Console.WriteLine($"stderr:\n{tarProcess.StandardError.ReadToEnd()}");
+                this.logger.LogDebug("Tar process exited with code {exitCode}", tarProcess.ExitCode);
+                this.logger.LogTrace("stdout:\n{stdout}", tarProcess.StandardOutput.ReadToEnd());
+                this.logger.LogTrace("stderr:\n{stderr}", tarProcess.StandardError.ReadToEnd());
                 return null;
             }
 
-            return new DirectoryInfo(Path.Join(output.FullName, "factorio"));
+            return new DirectoryInfo(Path.Combine(output.FullName, "factorio"));
         }
     }
 }

@@ -1,3 +1,5 @@
+using Factoriod.Utilities;
+
 namespace Factoriod.Daemon.Options
 {
     public sealed class Factorio
@@ -6,15 +8,25 @@ namespace Factoriod.Daemon.Options
         public FactorioConfiguration Configuration { get; set; } = null!;
         public FactorioMapGeneration MapGeneration { get; set; } = null!;
         public string ModsRootDirectory { get; set; } = null!;
+
+        public DirectoryInfo GetModsRootDirectory()
+            => new DirectoryInfo(this.ModsRootDirectory).ResolveTilde();
     }
 
     public sealed class FactorioExecutable
     {
-        public string RootDirectory { get; set; } = null!;
+        public string DownloadDirectory { get; set; } = null!;
+        public string ExecutableDirectory { get; set; } = null!;
         public string ExecutableName { get; set; } = null!;
 
-        public string GetExecutablePath()
-            => Path.Combine(this.RootDirectory, this.ExecutableName);
+        public string Version { get; set; } = null!;
+        public bool UseExperimental { get; set; }
+
+        public DirectoryInfo GetDownloadDirectory()
+            => new(Path.GetFullPath(this.DownloadDirectory));
+
+        public FileInfo GetExecutablePath(DirectoryInfo rootDirectory)
+            => new FileInfo(Path.Combine(rootDirectory.FullName, this.ExecutableDirectory, this.ExecutableName)).ResolveTilde();
     }
 
     public sealed class FactorioConfiguration
@@ -27,20 +39,20 @@ namespace Factoriod.Daemon.Options
         public string ServerBanlistPath { get; set; } = null!;
         public string ServerAdminlistPath { get; set; } = null!;
 
-        public string GetSavePath()
-            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.SavesDirectory, this.Save));
+        public FileInfo GetSavePath()
+            => new FileInfo(Path.Combine(this.RootDirectory, this.SavesDirectory, this.Save)).ResolveTilde();
 
-        public string GetServerSettingsPath()
-            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerSettingsPath));
+        public FileInfo GetServerSettingsPath()
+            => new FileInfo(Path.Combine(this.RootDirectory, this.ServerSettingsPath)).ResolveTilde();
 
-        public string GetServerWhitelistPath()
-            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerWhitelistPath));
+        public FileInfo GetServerWhitelistPath()
+            => new FileInfo(Path.Combine(this.RootDirectory, this.ServerWhitelistPath)).ResolveTilde();
 
-        public string GetServerBanlistPath()
-            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerBanlistPath));
+        public FileInfo GetServerBanlistPath()
+            => new FileInfo(Path.Combine(this.RootDirectory, this.ServerBanlistPath)).ResolveTilde();
         
-        public string GetServerAdminlistPath()
-            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.ServerAdminlistPath));
+        public FileInfo GetServerAdminlistPath()
+            => new FileInfo(Path.Combine(this.RootDirectory, this.ServerAdminlistPath)).ResolveTilde();
     }
 
     public sealed class FactorioMapGeneration
@@ -50,10 +62,10 @@ namespace Factoriod.Daemon.Options
         public int? MapGenSeed { get; set; }
         public string MapSettingsPath { get; set; } = null!;
 
-        public string GetMapGenSettingsPath()
-            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.MapGenSettingsPath));
+        public FileInfo GetMapGenSettingsPath()
+            => new FileInfo(Path.Combine(this.RootDirectory, this.MapGenSettingsPath)).ResolveTilde();
 
-        public string GetMapSettingsPath()
-            => PathUtilities.ResolveTilde(Path.Join(this.RootDirectory, this.MapSettingsPath));
+        public FileInfo GetMapSettingsPath()
+            => new FileInfo(Path.Combine(this.RootDirectory, this.MapSettingsPath)).ResolveTilde();
     }
 }
