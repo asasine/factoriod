@@ -22,7 +22,7 @@ namespace Factoriod.Fetcher
 
         public async Task<DirectoryInfo?> DownloadToAsync(FactorioVersion version, Distro distro, DirectoryInfo outputDirectory, CancellationToken cancellationToken = default)
         {
-            var versionedOutputDirectory = Path.Combine(outputDirectory.ResolveTilde().FullName, version.Version.ToString(), version.Build.ToString(), Distro.Linux64.ToString());
+            var versionedOutputDirectory = Path.Combine(outputDirectory.Resolve().FullName, version.Version.ToString(), version.Build.ToString(), Distro.Linux64.ToString());
             Directory.CreateDirectory(versionedOutputDirectory);
             var outputFile = new FileInfo(Path.Combine(versionedOutputDirectory, "factorio.tar.xz"));
 

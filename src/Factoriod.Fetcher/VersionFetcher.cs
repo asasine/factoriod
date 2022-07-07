@@ -64,7 +64,7 @@ namespace Factoriod.Fetcher
 
         public async Task<IEnumerable<(FactorioVersion version, Distro distro, DirectoryInfo path)>?> GetVersionsOnDiskAsync(DirectoryInfo directory, CancellationToken cancellationToken = default)
         {
-            directory = directory.ResolveTilde();
+            directory = directory.Resolve();
             var versions = GetVersionsAsync(false, cancellationToken);
             IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions;
             if (versions == null)
@@ -81,7 +81,7 @@ namespace Factoriod.Fetcher
 
         public IEnumerable<(FactorioVersion version, Distro distro, DirectoryInfo path)> GetVersionsOnDisk(DirectoryInfo directory, IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions)
         {
-            directory = directory.ResolveTilde();
+            directory = directory.Resolve();
             this.logger.LogDebug("Scanning {directory}", directory.FullName);
             if (!directory.Exists)
             {
@@ -100,7 +100,7 @@ namespace Factoriod.Fetcher
                     {
                         if (Distro.TryParse(distroDirectory.Name, out var distro))
                         {
-                            var factorioDirectory = new DirectoryInfo(Path.Combine(distroDirectory.FullName, "factorio")).ResolveTilde();
+                            var factorioDirectory = new DirectoryInfo(Path.Combine(distroDirectory.FullName, "factorio")).Resolve();
                             yield return (factorioVersion, distro, factorioDirectory);
                         }
                     }
