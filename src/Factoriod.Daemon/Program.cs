@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Factoriod.Daemon
 {
@@ -10,6 +12,13 @@ namespace Factoriod.Daemon
         public static async Task Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder(args)
+                .ConfigureLogging(builder =>
+                {
+                    builder.AddSimpleConsole(options =>
+                    {
+                        options.ColorBehavior = LoggerColorBehavior.Default;
+                    });
+                })
                 .ConfigureHostConfiguration(config =>
                 {
                     // despite CreateDefaultBuiler() being called, which should add appsettings.json,
