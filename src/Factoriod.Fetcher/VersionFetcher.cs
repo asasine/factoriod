@@ -102,7 +102,7 @@ namespace Factoriod.Fetcher
                         if (Distro.TryParse(distroDirectory.Name, out var distro))
                         {
                             var factorioDirectory = new DirectoryInfo(Path.Combine(distroDirectory.FullName, "factorio")).Resolve();
-                            yield return (factorioVersion, distro, factorioDirectory);
+                            yield return new FactorioDirectory(factorioVersion, distro, factorioDirectory);
                         }
                     }
                 }
