@@ -63,7 +63,7 @@ namespace Factoriod.Fetcher
             return await versions.Where(version => version.Build == ReleaseBuild.Headless).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<(FactorioVersion version, Distro distro, DirectoryInfo path)>?> GetVersionsOnDiskAsync(DirectoryInfo directory, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<FactorioDirectory>?> GetVersionsOnDiskAsync(DirectoryInfo directory, CancellationToken cancellationToken = default)
         {
             directory = directory.Resolve();
             var versions = GetVersionsAsync(false, cancellationToken);
@@ -80,7 +80,7 @@ namespace Factoriod.Fetcher
             return GetVersionsOnDisk(directory, latestStableVersions);
         }
 
-        public IEnumerable<(FactorioVersion version, Distro distro, DirectoryInfo path)> GetVersionsOnDisk(DirectoryInfo directory, IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions)
+        public IEnumerable<FactorioDirectory> GetVersionsOnDisk(DirectoryInfo directory, IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions)
         {
             directory = directory.Resolve();
             this.logger.LogDebug("Scanning {directory}", directory.FullName);
