@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Factoriod.Models\Factoriod.Models.csproj" />
     <ProjectReference Include="..\Factoriod.Utilities\Factoriod.Utilities.csproj" />
   </ItemGroup>
 

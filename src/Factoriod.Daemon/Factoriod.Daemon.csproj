@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Factoriod.Fetcher\Factoriod.Fetcher.csproj" />
+    <ProjectReference Include="..\Factoriod.Models\Factoriod.Models.csproj" />
     <ProjectReference Include="..\Factoriod.Utilities\Factoriod.Utilities.csproj" />
   </ItemGroup>
 

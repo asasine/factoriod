@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Factoriod.Fetcher;
-using Factoriod.Utilities;
+using Factoriod.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -91,13 +91,13 @@ namespace Factoriod.Daemon
                 return null;
             }
 
-            foreach (var (version, distro, path) in versionsOnDisk)
+            foreach (var versionOnDisk in versionsOnDisk)
             {
-                this.logger.LogDebug("Found Factorio version {version} {distro} on disk", version, distro);
-                if (version.Build == ReleaseBuild.Headless && version.Version == requestedVersion)
+                this.logger.LogDebug("Found Factorio on disk: {versionOnDisk}", versionOnDisk);
+                if (versionOnDisk.Version.Build == ReleaseBuild.Headless && versionOnDisk.Version.Version == requestedVersion)
                 {
-                    this.logger.LogInformation("Using Factorio version {version} {distro} on disk at {path}", version, distro, path);
-                    return path;
+                    this.logger.LogInformation("Using Factorio version on disk {versionOnDisk}", versionOnDisk);
+                    return versionOnDisk.Path;
                 }
             }
 

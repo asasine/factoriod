@@ -1,3 +1,9 @@
 # .NET
 obj
 bin
+
+# Visual Studio
+.vs
+launchSettings.json
+*.csproj.user
+UpgradeLog.htm

@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Factoriod.Models;
 using Factoriod.Utilities;
 using Microsoft.Extensions.Logging;
 
@@ -22,7 +23,7 @@ namespace Factoriod.Fetcher
 
         public async Task<DirectoryInfo?> DownloadToAsync(FactorioVersion version, Distro distro, DirectoryInfo outputDirectory, CancellationToken cancellationToken = default)
         {
-            var versionedOutputDirectory = Path.Combine(outputDirectory.ResolveTilde().FullName, version.Version.ToString(), version.Build.ToString(), Distro.Linux64.ToString());
+            var versionedOutputDirectory = Path.Combine(outputDirectory.Resolve().FullName, version.Version.ToString(), version.Build.ToString(), Distro.Linux64.ToString());
             Directory.CreateDirectory(versionedOutputDirectory);
             var outputFile = new FileInfo(Path.Combine(versionedOutputDirectory, "factorio.tar.xz"));
 

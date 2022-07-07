@@ -1,26 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.2.32616.157
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{5B435697-E3E4-494F-A1EB-D6DCC3954AA2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Fetcher", "src\Factoriod.Fetcher\Factoriod.Fetcher.csproj", "{1632E8E9-8308-4C77-A608-561A32C0A3E8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Fetcher", "src\Factoriod.Fetcher\Factoriod.Fetcher.csproj", "{1632E8E9-8308-4C77-A608-561A32C0A3E8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Daemon", "src\Factoriod.Daemon\Factoriod.Daemon.csproj", "{66DDB607-CDE3-4590-B92B-48C710FBBD26}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Daemon", "src\Factoriod.Daemon\Factoriod.Daemon.csproj", "{66DDB607-CDE3-4590-B92B-48C710FBBD26}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Utilities", "src\Factoriod.Utilities\Factoriod.Utilities.csproj", "{3DC50CAB-E312-4764-895F-15C5FCE9A267}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Utilities", "src\Factoriod.Utilities\Factoriod.Utilities.csproj", "{3DC50CAB-E312-4764-895F-15C5FCE9A267}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{41EEBA90-F2E0-4848-A7BE-30883B935E11}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Utilities.Test", "test\Factoriod.Utilities.Test\Factoriod.Utilities.Test.csproj", "{067C57FA-7AB3-4042-94F6-2E3AAF3E3387}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Models", "src\Factoriod.Models\Factoriod.Models.csproj", "{516CDD50-778C-4BCA-A626-2E2B0DE21AA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Utilities.Test", "test\Factoriod.Utilities.Test\Factoriod.Utilities.Test.csproj", "{067C57FA-7AB3-4042-94F6-2E3AAF3E3387}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1632E8E9-8308-4C77-A608-561A32C0A3E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -39,22 +40,11 @@ Global
 		{067C57FA-7AB3-4042-94F6-2E3AAF3E3387}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{067C57FA-7AB3-4042-94F6-2E3AAF3E3387}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{067C57FA-7AB3-4042-94F6-2E3AAF3E3387}.Release|Any CPU.Build.0 = Release|Any CPU
-		{516CDD50-778C-4BCA-A626-2E2B0DE21AA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{516CDD50-778C-4BCA-A626-2E2B0DE21AA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{516CDD50-778C-4BCA-A626-2E2B0DE21AA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{516CDD50-778C-4BCA-A626-2E2B0DE21AA7}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1632E8E9-8308-4C77-A608-561A32C0A3E8} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
 		{66DDB607-CDE3-4590-B92B-48C710FBBD26} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
 		{3DC50CAB-E312-4764-895F-15C5FCE9A267} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
 		{067C57FA-7AB3-4042-94F6-2E3AAF3E3387} = {41EEBA90-F2E0-4848-A7BE-30883B935E11}
-		{516CDD50-778C-4BCA-A626-2E2B0DE21AA7} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {23A8D5F7-A204-45D0-AB85-69BB6DFE0A41}
 	EndGlobalSection
 EndGlobal
