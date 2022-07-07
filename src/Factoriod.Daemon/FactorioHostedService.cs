@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Factoriod.Fetcher;
+using Factoriod.Models;
 using Factoriod.Utilities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
