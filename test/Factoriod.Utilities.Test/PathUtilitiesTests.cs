@@ -15,7 +15,7 @@ public class PathUtilitiesTests
     [Fact]
     public void ResolveAbsoluteRemainsAbsolute()
     {
-        var path = Path.Combine("C:", "foo", "bar", "baz.txt");
+        var path = Path.Combine(Directory.GetCurrentDirectory(), "foo", "bar", "baz.txt");
         Assert.True(Path.IsPathFullyQualified(path));
 
         var actual = PathUtilities.Resolve(path);
