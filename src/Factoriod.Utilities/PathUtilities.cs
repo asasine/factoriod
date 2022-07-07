@@ -26,9 +26,9 @@ namespace Factoriod.Utilities
         }
 
         public static DirectoryInfo Resolve(this DirectoryInfo directory)
-            => new(Resolve(directory.FullName));
+            => new(Resolve(directory.ToString()));
 
         public static FileInfo Resolve(this FileInfo file)
-            => new(Resolve(file.FullName));
+            => new(Resolve(file.ToString()));
     }
 }

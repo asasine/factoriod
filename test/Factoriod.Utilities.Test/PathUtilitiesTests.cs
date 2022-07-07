@@ -26,9 +26,9 @@ public class PathUtilitiesTests
     [Fact]
     public void ResolveHome()
     {
-        var path = "~/foo/bar/baz.txt";
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var expected = Path.Combine(home, "foo", "bar", "baz.txt");
+        var path = "~/foo/bar/baz.txt";
 
         var actual = PathUtilities.Resolve(path);
 
@@ -56,7 +56,7 @@ public class PathUtilitiesTests
     {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var path = Path.Combine(home, "foo", "bar");
-        var directory = new DirectoryInfo(path);
+        var directory = new DirectoryInfo(Path.Combine("~", "foo", "bar"));
 
         Assert.Equal(PathUtilities.Resolve(path), directory.Resolve().FullName);
     }
@@ -82,7 +82,7 @@ public class PathUtilitiesTests
     {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var path = Path.Combine(home, "foo", "bar", "baz.txt");
-        var file = new FileInfo(path);
+        var file = new FileInfo(Path.Combine("~", "foo", "bar", "baz.txt"));
 
         Assert.Equal(PathUtilities.Resolve(path), file.Resolve().FullName);
     }

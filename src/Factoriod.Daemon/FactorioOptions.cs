@@ -23,7 +23,7 @@ namespace Factoriod.Daemon.Options
         public bool UseExperimental { get; set; }
 
         public DirectoryInfo GetDownloadDirectory()
-            => new(Path.GetFullPath(this.DownloadDirectory));
+            => new DirectoryInfo(this.DownloadDirectory).Resolve();
 
         public FileInfo GetExecutablePath(DirectoryInfo rootDirectory)
             => new FileInfo(Path.Combine(rootDirectory.FullName, this.ExecutableDirectory, this.ExecutableName)).Resolve();
