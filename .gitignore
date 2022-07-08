@@ -7,3 +7,6 @@ bin
 launchSettings.json
 *.csproj.user
 UpgradeLog.htm
+
+# dotnet-deb
+Directory.Build.props
