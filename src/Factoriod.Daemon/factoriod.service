@@ -1,0 +1,8 @@
+[Unit]
+Description=A factorio daemon
+
+[Service]
+ExecStart=/bin/bash /usr/share/Factoriod.Daemon/Factoriod.Daemon
+
+[Install]
+WantedBy=multi-user.target

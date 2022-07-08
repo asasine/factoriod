@@ -26,6 +26,22 @@
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackagePrefix>factoriod</PackagePrefix>
+    <CreateUser>true</CreateUser>
+    <UserName>factorio</UserName>
+
+    <!-- NOTE: if the deb package with an installed service is installed on WSL, apt will be unable to remove the package -->
+    <InstallService>true</InstallService>
+    <ServiceName>factoriod</ServiceName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="factoriod.service" CopyToPublishDirectory="PreserveNewest">
+      <LinuxPath>/etc/systemd/system/factoriod.service</LinuxPath>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
