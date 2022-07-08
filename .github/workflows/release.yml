@@ -26,4 +26,4 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: factoriod-deb
-        path: ./src/Factoriod.Daemon/bin/Release/net6.0/linux-x64/factoriod.*.deb
+        path: src/Factoriod.Daemon/bin/Release/net6.0/linux-x64/factoriod.*.deb
