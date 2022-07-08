@@ -23,8 +23,6 @@ jobs:
       run: dotnet tool run dotnet-deb install
     - name: Create debian package
       run: dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
-    - name: Rename executable
-      run: mkdir dist && cp ./src/Factoriod.Fetcher/bin/Release/net6.0/linux-x64/publish/Factoriod.Fetcher ./dist/factorio-fetcher
     - uses: actions/upload-artifact@v3
       with:
         name: factoriod-deb
