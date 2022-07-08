@@ -19,6 +19,8 @@ jobs:
         dotnet-version: 6.0.x
     - name: Setup local .NET tools
       run: dotnet tool restore
+    - name: Setup dotnet-deb tool
+      run: dotnet tool run dotnet-deb install
     - name: Create debian package
       run: dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
     - name: Rename executable
