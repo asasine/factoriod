@@ -10,6 +10,7 @@ A factorio daemon for Ubuntu
 1. Clone the repo
 1. Open a terminal to the cloned repo
 1. Run: `dotnet tool restore`
+1. Run: `dotnet tool run dotnet-deb install`
 
 ### Launching the daemon
 1. Open a terminal to the cloned repo
@@ -25,6 +26,11 @@ The daemon reads and stores configuration in the _~/.config/factoriod_ directory
 This can be adjusted by modifying the [src/Factoriod.Daemon/appsettings.json](src/Factoriod.Daemon/appsettings.json) file.
 
 ### Systemd service
+1. [Install the daemon](#building-the-debian-package)
+1. Start the service: `sudo systemctl start factoriod`
+1. To have the service start on boot: `sudo systemctl enable factoriod`
+
+#### Directories in use
 - /var/cache/factoriod/: downloaded game binaries
 - /var/tmp/factoriod/: temporary files such as game updates
 - /var/lib/factoriod/: save games
