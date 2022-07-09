@@ -123,17 +123,17 @@ namespace Factoriod.Daemon
             this.logger.LogInformation("Starting factorio process");
 
             var arguments = new List<string>();
-            var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Configuration.GetSavePath());
+            var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Saves.GetSavePath());
             if (!addedStartServer)
             {
                 this.logger.LogInformation("No save file found, creating one");
                 await CreateSaveIfNotExists(factorioDirectory, cancellationToken);
 
                 // try again
-                addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Configuration.GetSavePath());
+                addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Saves.GetSavePath());
                 if (!addedStartServer)
                 {
-                    this.logger.LogError("Unable to find save file {path}", this.options.Configuration.GetSavePath());
+                    this.logger.LogError("Unable to find save file {path}", this.options.Saves.GetSavePath());
                     return 1;
                 }
             }
@@ -170,7 +170,7 @@ namespace Factoriod.Daemon
 
         private async Task CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)
         {
-            var savePath = this.options.Configuration.GetSavePath();
+            var savePath = this.options.Saves.GetSavePath();
             if (savePath.Exists)
             {
                 return;
