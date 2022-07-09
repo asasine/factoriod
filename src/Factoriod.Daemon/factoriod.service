@@ -9,7 +9,7 @@ WantedBy=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/usr/share/Factoriod.Daemon/Factoriod.Daemon
+ExecStart=/usr/share/factoriod/Factoriod.Daemon
 User=factorio
 Group=factorio
 StateDirectory=factoriod
