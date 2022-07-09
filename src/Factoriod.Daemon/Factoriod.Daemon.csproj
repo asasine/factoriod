@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>factoriod</PackageId>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
     <Authors>asasine</Authors>
     <Company>asasine</Company>
     <Description>A factorio daemon for Ubuntu</Description>
@@ -20,11 +20,24 @@
   <PropertyGroup>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
-    <PublishSingleFile>true</PublishSingleFile>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <PackagePrefix>factoriod</PackagePrefix>
+    <CreateUser>true</CreateUser>
+    <UserName>factorio</UserName>
+
+    <!-- NOTE: if the deb package with an installed service is installed on WSL, apt will be unable to remove the package -->
+    <InstallService>true</InstallService>
+    <ServiceName>factoriod</ServiceName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="factoriod.service" CopyToPublishDirectory="PreserveNewest">
+      <LinuxPath>/etc/systemd/system/factoriod.service</LinuxPath>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
@@ -35,6 +48,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
