@@ -23,3 +23,9 @@ A factorio daemon for Ubuntu
 ## Configuration
 The daemon reads and stores configuration in the _~/.config/factoriod_ directory by default.
 This can be adjusted by modifying the [src/Factoriod.Daemon/appsettings.json](src/Factoriod.Daemon/appsettings.json) file.
+
+### Systemd service
+- /var/cache/factoriod/: downloaded game binaries
+- /var/tmp/factoriod/: temporary files such as game updates
+- /var/lib/factoriod/: save games
+- /etc/factoriod/: configuration files (map settings, server settings, etc.)

@@ -1,8 +1,17 @@
 [Unit]
 Description=A factorio daemon
-
-[Service]
-ExecStart=/bin/bash /usr/share/Factoriod.Daemon/Factoriod.Daemon
+Documentation=https://github.com/asasine/factoriod
+Wants=networking-online.target
+After=networking-online.target
 
 [Install]
 WantedBy=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/share/Factoriod.Daemon/Factoriod.Daemon
+User=factorio
+Group=factorio
+StateDirectory=factoriod
+CacheDirectory=factoriod
+ConfigurationDirectory=factoriod
