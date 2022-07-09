@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Factoriod.Utilities;
 
 namespace Factoriod.Daemon.Options
@@ -16,6 +17,7 @@ namespace Factoriod.Daemon.Options
 
     public sealed class FactorioExecutable
     {
+        [Required]
         public string DownloadDirectory { get; set; } = null!;
         public string ExecutableDirectory { get; set; } = null!;
         public string ExecutableName { get; set; } = null!;
@@ -32,6 +34,7 @@ namespace Factoriod.Daemon.Options
 
     public sealed class FactorioConfiguration
     {
+        [Required]
         public string RootDirectory { get; set; } = null!;
         public string ServerSettingsPath { get; set; } = null!;
         public string ServerWhitelistPath { get; set; } = null!;
@@ -53,6 +56,7 @@ namespace Factoriod.Daemon.Options
 
     public sealed class FactorioSaves
     {
+        [Required]
         public string RootDirectory { get; set; } = null!;
         public string Save { get; set; } = null!;
 
@@ -62,6 +66,7 @@ namespace Factoriod.Daemon.Options
 
     public sealed class FactorioMapGeneration
     {
+        [Required]
         public string RootDirectory { get; set; } = null!;
         public string MapGenSettingsPath { get; set; } = null!;
         public int? MapGenSeed { get; set; }

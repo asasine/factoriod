@@ -24,6 +24,11 @@ namespace Factoriod.Daemon
                     // despite CreateDefaultBuiler() being called, which should add appsettings.json,
                     // it has to be manually added here to grab the file bundled into the single-file executable
                     config.AddJsonFile("appsettings.json");
+                    var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
+                    if (configurationDirectory != null)
+                    {
+                        config.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), optional: true);
+                    }
                 })
                 .ConfigureServices((context, services) =>
                 {
@@ -31,7 +36,31 @@ namespace Factoriod.Daemon
                     services.AddHttpClient<VersionFetcher>();
                     services.AddHttpClient<ReleaseFetcher>();
 
-                    services.Configure<Options.Factorio>(context.Configuration.GetSection("Factorio"));
+                    services.AddOptions<Options.Factorio>() 
+                        .Configure(options =>
+                        {
+                            options.Executable = new Options.FactorioExecutable
+                            {
+                                DownloadDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY")!,
+                            };
+
+                            options.Configuration = new Options.FactorioConfiguration
+                            {
+                                RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
+                            };
+
+                            options.Saves = new Options.FactorioSaves
+                            {
+                                RootDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY")!,
+                            };
+
+                            options.MapGeneration = new Options.FactorioMapGeneration
+                            {
+                                RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
+                            };
+                        })
+                        .Bind(context.Configuration.GetSection("Factorio"))
+                        .ValidateDataAnnotations();
                 })
                 .Build();
 
