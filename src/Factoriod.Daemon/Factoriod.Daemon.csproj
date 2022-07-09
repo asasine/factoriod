@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>factoriod</PackageId>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
     <Authors>asasine</Authors>
     <Company>asasine</Company>
     <Description>A factorio daemon for Ubuntu</Description>
@@ -48,6 +48,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
