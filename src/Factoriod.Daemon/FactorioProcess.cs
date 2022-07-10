@@ -120,20 +120,7 @@ public class FactorioProcess
         if (versionOnDisk == null)
         {
             this.logger.LogInformation("Factorio version {version} not found on disk, downloading", requestedVersion);
-            var downloadedDirectory = await this.releaseFetcher.DownloadToAsync(
-                new FactorioVersion(requestedVersion, ReleaseBuild.Headless, !this.options.Executable.UseExperimental),
-                Distro.Linux64,
-                this.options.Executable.GetDownloadDirectory(),
-                cancellationToken);
-
-            if (downloadedDirectory == null)
-            {
-                this.logger.LogError("Download failed");
-                return null;
-            }
-
-            this.logger.LogDebug("Downloaded Factorio version {version} to {path}", requestedVersion, downloadedDirectory);
-            return downloadedDirectory;
+            return await downloadRequestedVersionAsync();
         }
 
         this.logger.LogDebug("Found Factorio on disk: {versionOnDisk}", versionOnDisk);
@@ -144,8 +131,26 @@ public class FactorioProcess
         }
         else if (versionOnDisk.Value.Version.Version > requestedVersion)
         {
-            this.logger.LogInformation("Version on disk is greater than requested version {version}, downgrading it.", requestedVersion);
+            this.logger.LogInformation("Version {versionOnDisk} on disk is greater than requested version {requestedVersion}, downgrading it.", versionOnDisk.Value.Version.Version, requestedVersion);
 
+            // downgrade by downloading a new version
+            return await downloadRequestedVersionAsync();
+        }
+        else
+        {
+            this.logger.LogInformation("Version {versionOnDisk} on disk is less than requested version {requestedVersion}, upgrading it.", versionOnDisk.Value.Version.Version,requestedVersion);
+            var updated = await UpdateToVersionAsync(versionOnDisk.Value, requestedVersion, cancellationToken);
+            if (!updated)
+            {
+                this.logger.LogInformation("Unable to update existing download, downloading {version} directly instead.", requestedVersion);
+                return await downloadRequestedVersionAsync();
+
+            }
+            return versionOnDisk.Value.Path;
+        }
+
+        async Task<DirectoryInfo?> downloadRequestedVersionAsync()
+        {
             // downgrade by downloading a new version
             var downloadedDirectory = await this.releaseFetcher.DownloadToAsync(
                 new FactorioVersion(requestedVersion, ReleaseBuild.Headless, !this.options.Executable.UseExperimental),
@@ -161,12 +166,6 @@ public class FactorioProcess
 
             this.logger.LogDebug("Downloaded Factorio version {version} to {path}", requestedVersion, downloadedDirectory);
             return downloadedDirectory;
-        }
-        else
-        {
-            this.logger.LogInformation("Version on disk is less than requested version {version}, upgrading it.", requestedVersion);
-            await UpdateToVersionAsync(versionOnDisk.Value, requestedVersion, cancellationToken);
-            return versionOnDisk.Value.Path;
         }
     }
 
@@ -196,11 +195,12 @@ public class FactorioProcess
         return Version.Parse(unparsedRequestedVersion);
     }
 
-    private async Task UpdateToVersionAsync(FactorioDirectory versionOnDisk, Version requestedVersion, CancellationToken cancellationToken = default)
+    private async Task<bool> UpdateToVersionAsync(FactorioDirectory versionOnDisk, Version requestedVersion, CancellationToken cancellationToken = default)
     {
-        // TODO(#23): use Update API to upgrade the version on disk to the requested version
-        this.logger.LogWarning($"{nameof(UpdateToVersionAsync)} is not implemented yet, returning the same version!");
-        await Task.Yield();
+        // the update path is a series of updates from the version on disk to the requested version
+        // this may include several updates applied in sequence
+        var updatePath = await this.versionFetcher.GetUpdatePathAsync(versionOnDisk.Version.Version, requestedVersion, cancellationToken);
+        return false;
     }
 
     private async Task CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Factoriod.Models;
@@ -19,6 +20,7 @@ namespace Factoriod.Fetcher
         private readonly HttpClient client;
 
         private const string VersionUrl = "https://factorio.com/api/latest-releases";
+        private const string UpdatesUrl = "https://updater.factorio.com/get-available-versions";
 
         public VersionFetcher(ILogger<VersionFetcher> logger, HttpClient client)
         {
@@ -107,6 +109,52 @@ namespace Factoriod.Fetcher
 
             var isStable = baseInfo.Version >= latestStableHeadlessVersion;
             return new FactorioDirectory(new FactorioVersion(baseInfo.Version, ReleaseBuild.Headless, isStable), Distro.Linux64, directory);
+        }
+
+        
+        private record AvailableVersions([property: JsonPropertyName("core-linux_headless64")] List <FromToVersion> CoreLinuxHeadless64);
+
+        public async Task<ILookup<Version, Version>> GetAvailableUpdatesAsync(CancellationToken cancellationToken = default)
+        {
+            using var response = await this.client.GetAsync(UpdatesUrl, cancellationToken);
+            var availableVersions = await response.Content.ReadAsAsync<AvailableVersions>(
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                },
+                cancellationToken);
+
+            availableVersions ??= new AvailableVersions(new List<FromToVersion>());
+            return availableVersions.CoreLinuxHeadless64.ToLookup(fromTo => fromTo.From, fromTo => fromTo.To);
+        }
+
+        public async Task<IEnumerable<FromToVersion>?> GetUpdatePathAsync(Version from, Version to, CancellationToken cancellationToken = default)
+        {
+            var availableUpdates = await GetAvailableUpdatesAsync(cancellationToken);
+            var updatePath = new List<FromToVersion>();
+
+            for (var latestVersion = from; !latestVersion.Equals(to); latestVersion = updatePath.Last().To)
+            {
+                if (availableUpdates.Contains(latestVersion))
+                {
+                    var updatesFrom = availableUpdates[latestVersion].ToHashSet();
+                    var bestUpdate = updatesFrom.Contains(to) ? to : updatesFrom.Max();
+                    if (bestUpdate == null)
+                    {
+                        // no update path found
+                        return null;
+                    }
+
+                    updatePath.Add(new FromToVersion(latestVersion, bestUpdate));
+                }
+                else
+                {
+                    // no update path found
+                    return null;
+                }
+            }
+
+            return updatePath;
         }
     }
 }
