@@ -38,6 +38,8 @@ namespace Factoriod.Daemon
                     services.AddHttpClient<VersionFetcher>();
                     services.AddHttpClient<ReleaseFetcher>();
 
+                    services.AddTransient<FactorioProcess>();
+
                     services.AddOptions<Options.Factorio>() 
                         .Configure(options =>
                         {
