@@ -201,9 +201,29 @@ public class FactorioProcess
         // this may include several updates applied in sequence
         var updatePath = await this.versionFetcher.GetUpdatePathAsync(versionOnDisk.Version.Version, requestedVersion, cancellationToken);
 
-        // TODO(#23): complete implementation of update API
-        // for now, returning false causes the caller to download a fresh copy directly
+        if (updatePath == null)
+        {
+            this.logger.LogDebug("No update was found for update from {versionOnDisk} to {requestedVersion}", versionOnDisk.Version.Version, requestedVersion);
+            return false;
+        }
 
+        if (!updatePath.Any())
+        {
+            this.logger.LogDebug("No update was required for update from {versionOnDisk} to {requestedVersion}", versionOnDisk.Version.Version, requestedVersion);
+            return true;
+        }
+
+        var updateDirectory = this.options.Executable.GetUpdatesDirectory();
+        var downloadTasks = updatePath.Select(update => this.releaseFetcher.DownloadUpdateAsync(update, updateDirectory, cancellationToken));
+        var downloadedUpdates = await Task.WhenAll(downloadTasks);
+        if (downloadedUpdates == null || downloadedUpdates.Any(downloadedUpdate => downloadedUpdate == null))
+        {
+            this.logger.LogWarning("Failed to download all updates required for update from {versionOnDisk} to {requestedVersion}", versionOnDisk.Version.Version, requestedVersion);
+            return false;
+        }
+
+        // TODO(#23): apply all updates sequentially to the binary on disk
+        // for now, returning false causes the caller to download a fresh copy directly
         return false;
     }
 
