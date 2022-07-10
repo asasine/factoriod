@@ -200,6 +200,10 @@ public class FactorioProcess
         // the update path is a series of updates from the version on disk to the requested version
         // this may include several updates applied in sequence
         var updatePath = await this.versionFetcher.GetUpdatePathAsync(versionOnDisk.Version.Version, requestedVersion, cancellationToken);
+
+        // TODO(#23): complete implementation of update API
+        // for now, returning false causes the caller to download a fresh copy directly
+
         return false;
     }
 
