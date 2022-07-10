@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Factoriod.Models;
@@ -63,50 +64,49 @@ namespace Factoriod.Fetcher
             return await versions.Where(version => version.Build == ReleaseBuild.Headless).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<FactorioDirectory>?> GetVersionsOnDiskAsync(DirectoryInfo directory, CancellationToken cancellationToken = default)
+        private record BaseInfoJson(Version Version);
+
+        /// <summary>
+        /// Gets the version of the factorio instance downloaded to <paramref name="directory"/>.
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<FactorioDirectory?> GetVersionAsync(DirectoryInfo directory, CancellationToken cancellationToken = default)
         {
             directory = directory.Resolve();
             var versions = GetVersionsAsync(false, cancellationToken);
-            IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions;
+            Version? latestStableHeadlessVersion = null;
             if (versions == null)
             {
-                latestStableVersions = new Dictionary<ReleaseBuild, Version>();
             }
             else
             {
-                latestStableVersions = await versions.ToDictionaryAsync(factorioVersion => factorioVersion.Build, factorioVersion => factorioVersion.Version, cancellationToken);
+                var latestStableHeadlessFactorioVersion = await versions.SingleOrDefaultAsync(factorioVersion => factorioVersion.Stable && factorioVersion.Build == ReleaseBuild.Headless, cancellationToken);
+                latestStableHeadlessVersion = latestStableHeadlessFactorioVersion?.Version;
             }
 
-            return GetVersionsOnDisk(directory, latestStableVersions);
-        }
-
-        public IEnumerable<FactorioDirectory> GetVersionsOnDisk(DirectoryInfo directory, IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions)
-        {
-            directory = directory.Resolve();
-            this.logger.LogDebug("Scanning {directory}", directory.FullName);
-            if (!directory.Exists)
+            var baseInfoJsonFile = new FileInfo(Path.Combine(directory.FullName, "data", "base", "info.json"));
+            if (!baseInfoJsonFile.Exists)
             {
-                yield break;
+                return null;
             }
 
-            foreach (var versionDirectory in directory.EnumerateDirectories())
-            {
-                var version = Version.Parse(versionDirectory.Name);
-                foreach (var buildDirectory in versionDirectory.EnumerateDirectories())
+            using var contents = baseInfoJsonFile.OpenRead();
+            var baseInfo = await JsonSerializer.DeserializeAsync<BaseInfoJson>(contents,
+                new JsonSerializerOptions
                 {
-                    var releaseBuild = new ReleaseBuild(buildDirectory.Name);
-                    var stable = latestStableVersions.TryGetValue(releaseBuild, out var latestStable) && version <= latestStable;
-                    var factorioVersion = new FactorioVersion(version, releaseBuild, stable);
-                    foreach (var distroDirectory in buildDirectory.EnumerateDirectories())
-                    {
-                        if (Distro.TryParse(distroDirectory.Name, out var distro))
-                        {
-                            var factorioDirectory = new DirectoryInfo(Path.Combine(distroDirectory.FullName, "factorio")).Resolve();
-                            yield return new FactorioDirectory(factorioVersion, distro, factorioDirectory);
-                        }
-                    }
-                }
+                    PropertyNameCaseInsensitive = true,
+                },
+                cancellationToken);
+
+            if (baseInfo == null)
+            {
+                return null;
             }
+
+            var isStable = baseInfo.Version >= latestStableHeadlessVersion;
+            return new FactorioDirectory(new FactorioVersion(baseInfo.Version, ReleaseBuild.Headless, isStable), Distro.Linux64, directory);
         }
     }
 }

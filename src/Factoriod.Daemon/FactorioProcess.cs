@@ -29,6 +29,12 @@ public class FactorioProcess
 
     public async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
     {
+        // find a downloaded factorio
+        //  if a version doesn't exist, download it
+        //  if an outdated version exists, update it
+        // start the server
+        //  if a save doesn't exist, create one
+
         var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
         if (factorioDirectory == null)
         {
@@ -93,14 +99,88 @@ public class FactorioProcess
     private async Task<DirectoryInfo?> GetFactorioDirectoryAsync(CancellationToken cancellationToken = default)
     {
         // get the desired version from configuration
-        // if that version is "latest", get the latest version from the API
-        // if that desired version (configured or "latest") is on disk, return the path to it
-        // else, download the version to disk and return the path to it
+        // return a path to a matching version on disk
+        //  find a downloaded factorio binary and get its version
+        //  if one doesn't exist, download the desired version
+        //  if it does exist and its version does not match the desired version, update it
 
-        var executableDownloadDirectory = this.options.Executable.GetDownloadDirectory();
+        var requestedVersion = await GetRequestedVersionAsync(cancellationToken);
+        if (requestedVersion == null)
+        {
+            this.logger.LogWarning("Could not determine a requested version.");
+            return null;
+        }
 
-        this.logger.LogDebug("Checking for Factorio executables in {executableDownloadDirectory} ({config})", executableDownloadDirectory, this.options.Executable.DownloadDirectory);
+        this.logger.LogDebug("Using Factorio version {version}", requestedVersion);
 
+        var factorioDirectory = this.options.Executable.GetFactorioDirectory();
+        this.logger.LogDebug("Checking for Factorio executables in {directory}", factorioDirectory);
+
+        var versionOnDisk = await this.versionFetcher.GetVersionAsync(factorioDirectory, cancellationToken);
+        if (versionOnDisk == null)
+        {
+            this.logger.LogInformation("Factorio version {version} not found on disk, downloading", requestedVersion);
+            var downloadedDirectory = await this.releaseFetcher.DownloadToAsync(
+                new FactorioVersion(requestedVersion, ReleaseBuild.Headless, !this.options.Executable.UseExperimental),
+                Distro.Linux64,
+                this.options.Executable.GetDownloadDirectory(),
+                cancellationToken);
+
+            if (downloadedDirectory == null)
+            {
+                this.logger.LogError("Download failed");
+                return null;
+            }
+
+            this.logger.LogDebug("Downloaded Factorio version {version} to {path}", requestedVersion, downloadedDirectory);
+            return downloadedDirectory;
+        }
+
+        this.logger.LogDebug("Found Factorio on disk: {versionOnDisk}", versionOnDisk);
+        if (versionOnDisk.Value.Version.Version == requestedVersion)
+        {
+            this.logger.LogInformation("Version on disk matches requested version {version}.", requestedVersion);
+            return versionOnDisk.Value.Path;
+        }
+        else if (versionOnDisk.Value.Version.Version > requestedVersion)
+        {
+            this.logger.LogInformation("Version on disk is greater than requested version {version}, downgrading it.", requestedVersion);
+
+            // downgrade by downloading a new version
+            var downloadedDirectory = await this.releaseFetcher.DownloadToAsync(
+                new FactorioVersion(requestedVersion, ReleaseBuild.Headless, !this.options.Executable.UseExperimental),
+                Distro.Linux64,
+                this.options.Executable.GetDownloadDirectory(),
+                cancellationToken);
+
+            if (downloadedDirectory == null)
+            {
+                this.logger.LogError("Download failed");
+                return null;
+            }
+
+            this.logger.LogDebug("Downloaded Factorio version {version} to {path}", requestedVersion, downloadedDirectory);
+            return downloadedDirectory;
+        }
+        else
+        {
+            this.logger.LogInformation("Version on disk is less than requested version {version}, upgrading it.", requestedVersion);
+            await UpdateToVersionAsync(versionOnDisk.Value, requestedVersion, cancellationToken);
+            return versionOnDisk.Value.Path;
+        }
+    }
+
+    /// <summary>
+    /// Gets the requested version from <see cref="options"/>.
+    /// </summary>
+    /// <remarks>
+    /// If the version in <see cref="Options.FactorioExecutable.Version"/> is <c>latest</c>,
+    /// fetches the latest version from the Factorio Version API.
+    /// </remarks>
+    /// <param name="cancellationToken">A token to cancel the task.</param>
+    /// <returns>The requested version, or <see langword="null"/> if it could not be determined.</returns>
+    private async Task<Version?> GetRequestedVersionAsync(CancellationToken cancellationToken = default)
+    {
         var unparsedRequestedVersion = this.options.Executable.Version;
         if (unparsedRequestedVersion == "latest")
         {
@@ -113,40 +193,14 @@ public class FactorioProcess
             unparsedRequestedVersion = latestVersion.Version.ToString();
         }
 
-        var requestedVersion = Version.Parse(unparsedRequestedVersion);
-        this.logger.LogDebug("Using Factorio version {version}", requestedVersion);
+        return Version.Parse(unparsedRequestedVersion);
+    }
 
-        var versionsOnDisk = await this.versionFetcher.GetVersionsOnDiskAsync(executableDownloadDirectory, cancellationToken);
-        if (versionsOnDisk == null)
-        {
-            return null;
-        }
-
-        foreach (var versionOnDisk in versionsOnDisk)
-        {
-            this.logger.LogDebug("Found Factorio on disk: {versionOnDisk}", versionOnDisk);
-            if (versionOnDisk.Version.Build == ReleaseBuild.Headless && versionOnDisk.Version.Version == requestedVersion)
-            {
-                this.logger.LogInformation("Using Factorio version on disk {versionOnDisk}", versionOnDisk);
-                return versionOnDisk.Path;
-            }
-        }
-
-        this.logger.LogInformation("Factorio version {version} not found on disk, downloading", requestedVersion);
-        var downloadedDirectory = await this.releaseFetcher.DownloadToAsync(
-            new FactorioVersion(requestedVersion, ReleaseBuild.Headless, !this.options.Executable.UseExperimental),
-            Distro.Linux64,
-            executableDownloadDirectory,
-            cancellationToken);
-
-        if (downloadedDirectory == null)
-        {
-            this.logger.LogError("Download failed");
-            return null;
-        }
-
-        this.logger.LogDebug("Downloaded Factorio version {version} to {path}", requestedVersion, downloadedDirectory);
-        return downloadedDirectory;
+    private async Task UpdateToVersionAsync(FactorioDirectory versionOnDisk, Version requestedVersion, CancellationToken cancellationToken = default)
+    {
+        // TODO(#23): use Update API to upgrade the version on disk to the requested version
+        this.logger.LogWarning($"{nameof(UpdateToVersionAsync)} is not implemented yet, returning the same version!");
+        await Task.Yield();
     }
 
     private async Task CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)

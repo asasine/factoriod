@@ -23,24 +23,18 @@ namespace Factoriod.Fetcher
 
         public async Task<DirectoryInfo?> DownloadToAsync(FactorioVersion version, Distro distro, DirectoryInfo outputDirectory, CancellationToken cancellationToken = default)
         {
-            var versionedOutputDirectory = Path.Combine(outputDirectory.Resolve().FullName, version.Version.ToString(), version.Build.ToString(), Distro.Linux64.ToString());
-            Directory.CreateDirectory(versionedOutputDirectory);
-            var outputFile = new FileInfo(Path.Combine(versionedOutputDirectory, "factorio.tar.xz"));
+            outputDirectory.Create();
+            var outputFile = new FileInfo(Path.Combine(outputDirectory.FullName, "factorio.tar.xz"));
 
             this.logger.LogDebug("Downloading to {outputDirectory}", outputDirectory);
+            var downloadUrl = GetDownloadUrl(version, distro);
+            using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-            if (!outputFile.Exists)
-            {
-                this.logger.LogDebug("File does not exists, downloading");
-                var downloadUrl = GetDownloadUrl(version, distro);
-                using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-                response.EnsureSuccessStatusCode();
-
-                using var requestStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-                using var outputFileStream = File.Open(outputFile.FullName, FileMode.Create);
-                await requestStream.CopyToAsync(outputFileStream, cancellationToken);
-                response.Content = null;
-            }
+            using var requestStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var outputFileStream = File.Open(outputFile.FullName, FileMode.Create);
+            await requestStream.CopyToAsync(outputFileStream, cancellationToken);
+            response.Content = null;
 
             if (outputFile.Directory == null)
             {
@@ -48,7 +42,9 @@ namespace Factoriod.Fetcher
                 return null;
             }
 
-            return await ExtractAsync(outputFile, outputFile.Directory, cancellationToken);
+            var extractedDirectory = await ExtractAsync(outputFile, outputFile.Directory, cancellationToken);
+            outputFile.Delete();
+            return extractedDirectory;
         }
 
         private static string GetDownloadUrl(FactorioVersion version, Distro distro)
@@ -58,6 +54,12 @@ namespace Factoriod.Fetcher
         private async Task<DirectoryInfo?> ExtractAsync(FileInfo input, DirectoryInfo output, CancellationToken cancellationToken = default)
         {
             this.logger.LogDebug("Extracting {input} to {output}", input, output);
+            var factorioDirectory = new DirectoryInfo(Path.Combine(output.FullName, "factorio"));
+            if (factorioDirectory.Exists)
+            {
+                factorioDirectory.Delete(true);
+            }
+
             output.Create();
 
             using var tarProcess = Process.Start(new ProcessStartInfo
@@ -84,7 +86,7 @@ namespace Factoriod.Fetcher
                 return null;
             }
 
-            return new DirectoryInfo(Path.Combine(output.FullName, "factorio"));
+            return factorioDirectory;
         }
     }
 }
