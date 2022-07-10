@@ -19,15 +19,17 @@ namespace Factoriod.Daemon
                         options.ColorBehavior = LoggerColorBehavior.Default;
                     });
                 })
-                .ConfigureHostConfiguration(config =>
+                .ConfigureAppConfiguration((context, configuration) =>
                 {
-                    // despite CreateDefaultBuiler() being called, which should add appsettings.json,
-                    // it has to be manually added here to grab the file bundled into the single-file executable
-                    config.AddJsonFile("appsettings.json");
+                    var environment = context.HostingEnvironment;
+                    configuration
+                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                        .AddJsonFile($"appsettings.{environment.EnvironmentName}.json", true, true);
+
                     var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
                     if (configurationDirectory != null)
                     {
-                        config.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), optional: true);
+                        configuration.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), true, true);
                     }
                 })
                 .ConfigureServices((context, services) =>
