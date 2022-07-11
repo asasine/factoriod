@@ -397,6 +397,12 @@ public class FactorioProcess
         {
             this.logger.LogInformation("Factorio process started");
         }
+
+        var userJoinLeave = Regex.Match(e.Data, @"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \[(?:JOIN|LEAVE)] (?<user>\w+) (?<action>joined|left) the game$");
+        if (userJoinLeave.Success)
+        {
+            this.logger.LogInformation("{user} {action} the game", userJoinLeave.Groups["user"].Value, userJoinLeave.Groups["action"].Value);
+        }
     }
 
     private void OnFactorioProcessErrorDataReceived(object sender, DataReceivedEventArgs e)
