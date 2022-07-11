@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Factoriod.Models;
@@ -18,6 +20,7 @@ namespace Factoriod.Fetcher
         private readonly HttpClient client;
 
         private const string VersionUrl = "https://factorio.com/api/latest-releases";
+        private const string UpdatesUrl = "https://updater.factorio.com/get-available-versions";
 
         public VersionFetcher(ILogger<VersionFetcher> logger, HttpClient client)
         {
@@ -63,50 +66,102 @@ namespace Factoriod.Fetcher
             return await versions.Where(version => version.Build == ReleaseBuild.Headless).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<FactorioDirectory>?> GetVersionsOnDiskAsync(DirectoryInfo directory, CancellationToken cancellationToken = default)
+        private record BaseInfoJson(Version Version);
+
+        /// <summary>
+        /// Gets the version of the factorio instance downloaded to <paramref name="directory"/>.
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<FactorioDirectory?> GetVersionAsync(DirectoryInfo directory, CancellationToken cancellationToken = default)
         {
             directory = directory.Resolve();
             var versions = GetVersionsAsync(false, cancellationToken);
-            IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions;
+            Version? latestStableHeadlessVersion = null;
             if (versions == null)
             {
-                latestStableVersions = new Dictionary<ReleaseBuild, Version>();
             }
             else
             {
-                latestStableVersions = await versions.ToDictionaryAsync(factorioVersion => factorioVersion.Build, factorioVersion => factorioVersion.Version, cancellationToken);
+                var latestStableHeadlessFactorioVersion = await versions.SingleOrDefaultAsync(factorioVersion => factorioVersion.Stable && factorioVersion.Build == ReleaseBuild.Headless, cancellationToken);
+                latestStableHeadlessVersion = latestStableHeadlessFactorioVersion?.Version;
             }
 
-            return GetVersionsOnDisk(directory, latestStableVersions);
+            var baseInfoJsonFile = new FileInfo(Path.Combine(directory.FullName, "data", "base", "info.json"));
+            if (!baseInfoJsonFile.Exists)
+            {
+                return null;
+            }
+
+            using var contents = baseInfoJsonFile.OpenRead();
+            var baseInfo = await JsonSerializer.DeserializeAsync<BaseInfoJson>(contents,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                },
+                cancellationToken);
+
+            if (baseInfo == null)
+            {
+                return null;
+            }
+
+            var isStable = baseInfo.Version >= latestStableHeadlessVersion;
+            return new FactorioDirectory(new FactorioVersion(baseInfo.Version, ReleaseBuild.Headless, isStable), Distro.Linux64, directory);
         }
 
-        public IEnumerable<FactorioDirectory> GetVersionsOnDisk(DirectoryInfo directory, IReadOnlyDictionary<ReleaseBuild, Version> latestStableVersions)
-        {
-            directory = directory.Resolve();
-            this.logger.LogDebug("Scanning {directory}", directory.FullName);
-            if (!directory.Exists)
-            {
-                yield break;
-            }
+        
+        private record AvailableVersions([property: JsonPropertyName("core-linux_headless64")] List <FromToVersion> CoreLinuxHeadless64);
 
-            foreach (var versionDirectory in directory.EnumerateDirectories())
-            {
-                var version = Version.Parse(versionDirectory.Name);
-                foreach (var buildDirectory in versionDirectory.EnumerateDirectories())
+        public async Task<ILookup<Version, Version>> GetAvailableUpdatesAsync(CancellationToken cancellationToken = default)
+        {
+            using var response = await this.client.GetAsync(UpdatesUrl, cancellationToken);
+            var availableVersions = await response.Content.ReadAsAsync<AvailableVersions>(
+                new JsonSerializerOptions
                 {
-                    var releaseBuild = new ReleaseBuild(buildDirectory.Name);
-                    var stable = latestStableVersions.TryGetValue(releaseBuild, out var latestStable) && version <= latestStable;
-                    var factorioVersion = new FactorioVersion(version, releaseBuild, stable);
-                    foreach (var distroDirectory in buildDirectory.EnumerateDirectories())
+                    PropertyNameCaseInsensitive = true,
+                },
+                cancellationToken);
+
+            availableVersions ??= new AvailableVersions(new List<FromToVersion>());
+            return availableVersions.CoreLinuxHeadless64.ToLookup(fromTo => fromTo.From, fromTo => fromTo.To);
+        }
+
+        /// <summary>
+        /// Returns an ordered enumerable of updates to apply to an executable with version <paramref name="from"/> to update it to version <paramref name="to"/>.
+        /// </summary>
+        /// <param name="from">The version to update from.</param>
+        /// <param name="to">The version to update to.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>An ordered enumeable of updates to apply.</returns>
+        public async Task<IEnumerable<FromToVersion>?> GetUpdatePathAsync(Version from, Version to, CancellationToken cancellationToken = default)
+        {
+            var availableUpdates = await GetAvailableUpdatesAsync(cancellationToken);
+            var updatePath = new List<FromToVersion>();
+
+            for (var latestVersion = from; !latestVersion.Equals(to); latestVersion = updatePath.Last().To)
+            {
+                if (availableUpdates.Contains(latestVersion))
+                {
+                    var updatesFrom = availableUpdates[latestVersion].ToHashSet();
+                    var bestUpdate = updatesFrom.Contains(to) ? to : updatesFrom.Max();
+                    if (bestUpdate == null)
                     {
-                        if (Distro.TryParse(distroDirectory.Name, out var distro))
-                        {
-                            var factorioDirectory = new DirectoryInfo(Path.Combine(distroDirectory.FullName, "factorio")).Resolve();
-                            yield return new FactorioDirectory(factorioVersion, distro, factorioDirectory);
-                        }
+                        // no update path found
+                        return null;
                     }
+
+                    updatePath.Add(new FromToVersion(latestVersion, bestUpdate));
+                }
+                else
+                {
+                    // no update path found
+                    return null;
                 }
             }
+
+            return updatePath;
         }
     }
 }

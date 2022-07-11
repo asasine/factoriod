@@ -28,6 +28,12 @@ namespace Factoriod.Daemon.Options
         public DirectoryInfo GetDownloadDirectory()
             => new DirectoryInfo(this.DownloadDirectory).Resolve();
 
+        public DirectoryInfo GetFactorioDirectory()
+            => new(Path.Combine(GetDownloadDirectory().FullName, "factorio"));
+
+        public DirectoryInfo GetUpdatesDirectory()
+            => new(Path.Combine(GetDownloadDirectory().FullName, "updates"));
+
         public FileInfo GetExecutablePath(DirectoryInfo rootDirectory)
             => new FileInfo(Path.Combine(rootDirectory.FullName, this.ExecutableDirectory, this.ExecutableName)).Resolve();
     }
