@@ -1,5 +1,5 @@
 ﻿using System;
 
-namespace Factoriod.Fetcher;
+namespace Factoriod.Models;
 
 public readonly record struct FromToVersion(Version From, Version To);

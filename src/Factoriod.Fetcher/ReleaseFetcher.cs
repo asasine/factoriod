@@ -42,7 +42,7 @@ namespace Factoriod.Fetcher
             return extractedDirectory;
         }
 
-        public async Task<FileInfo?> DownloadUpdateAsync(FromToVersion update, DirectoryInfo outputDirectory, CancellationToken cancellationToken = default)
+        public async Task<FactorioUpdate?> DownloadUpdateAsync(FromToVersion update, DirectoryInfo outputDirectory, CancellationToken cancellationToken = default)
         {
             outputDirectory.Create();
             this.logger.LogDebug("Downloading to {outputDirectory}", outputDirectory);
@@ -79,7 +79,7 @@ namespace Factoriod.Fetcher
                 return null;
             }
 
-            return outputFile;
+            return new FactorioUpdate(update, outputFile);
         }
 
         private async Task<bool> DownloadFileAsync(string url, FileInfo outputFile, CancellationToken cancellationToken = default)

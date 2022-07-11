@@ -214,17 +214,74 @@ public class FactorioProcess
         }
 
         var updateDirectory = this.options.Executable.GetUpdatesDirectory();
-        var downloadTasks = updatePath.Select(update => this.releaseFetcher.DownloadUpdateAsync(update, updateDirectory, cancellationToken));
-        var downloadedUpdates = await Task.WhenAll(downloadTasks);
-        if (downloadedUpdates == null || downloadedUpdates.Any(downloadedUpdate => downloadedUpdate == null))
+        var downloadTasks = updatePath.Select(update => this.releaseFetcher.DownloadUpdateAsync(update, updateDirectory, cancellationToken)).ToArray();
+        var downloadedUpdates = (await Task.WhenAll(downloadTasks))
+            .Where(update => update != null)
+            .Select(update => update!.Value) // null forgiving because the previous .Where makes this safe
+            .ToArray();
+
+        if (downloadedUpdates.Length != downloadTasks.Length)
         {
             this.logger.LogWarning("Failed to download all updates required for update from {versionOnDisk} to {requestedVersion}", versionOnDisk.Version.Version, requestedVersion);
             return false;
         }
 
-        // TODO(#23): apply all updates sequentially to the binary on disk
-        // for now, returning false causes the caller to download a fresh copy directly
-        return false;
+        // these must be applied in order, not concurrently
+        foreach (var update in downloadedUpdates)
+        {
+            var success = await ApplyUpdateAsync(versionOnDisk, update, cancellationToken);
+            if (success)
+            {
+                this.logger.LogDebug("Updated from {from} to {to}", update.FromTo.From, update.FromTo.To);
+            }
+            else
+            {
+                this.logger.LogWarning("Failed toa apply update from {from} to {to}", update.FromTo.From, update.FromTo.To);
+                return false;
+            }
+        }
+
+        foreach (var update in downloadedUpdates)
+        {
+            update.File.Delete();
+        }
+
+        return true;
+    }
+
+    private async Task<bool> ApplyUpdateAsync(FactorioDirectory versionOnDisk, FactorioUpdate update, CancellationToken cancellationToken = default)
+    {
+        var arguments = new List<string>
+        {
+            "--apply-update",
+            update.File.FullName,
+        };
+
+        using var updateProcess = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = this.options.Executable.GetExecutablePath(versionOnDisk.Path).FullName,
+                Arguments = string.Join(" ", arguments),
+                WorkingDirectory = versionOnDisk.Path.FullName,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                CreateNoWindow = true,
+            },
+        };
+
+        updateProcess.Start();
+        await updateProcess.WaitForExitAsync(cancellationToken);
+        if (updateProcess.ExitCode != 0)
+        {
+            this.logger.LogDebug($"{nameof(ApplyUpdateAsync)} for file {{file}} stdout:\n{{stdout}}", update, await updateProcess.StandardOutput.ReadToEndAsync());
+            this.logger.LogDebug($"{nameof(ApplyUpdateAsync)} for file {{file}} stderr:\n{{stdout}}", update, await updateProcess.StandardError.ReadToEndAsync());
+            return false;
+        }
+
+        return true;
     }
 
     private async Task CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)

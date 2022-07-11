@@ -128,6 +128,13 @@ namespace Factoriod.Fetcher
             return availableVersions.CoreLinuxHeadless64.ToLookup(fromTo => fromTo.From, fromTo => fromTo.To);
         }
 
+        /// <summary>
+        /// Returns an ordered enumerable of updates to apply to an executable with version <paramref name="from"/> to update it to version <paramref name="to"/>.
+        /// </summary>
+        /// <param name="from">The version to update from.</param>
+        /// <param name="to">The version to update to.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>An ordered enumeable of updates to apply.</returns>
         public async Task<IEnumerable<FromToVersion>?> GetUpdatePathAsync(Version from, Version to, CancellationToken cancellationToken = default)
         {
             var availableUpdates = await GetAvailableUpdatesAsync(cancellationToken);
