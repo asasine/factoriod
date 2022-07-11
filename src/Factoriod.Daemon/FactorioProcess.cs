@@ -23,11 +23,6 @@ public class FactorioProcess
         this.releaseFetcher = releaseFetcher;
     }
 
-    public async Task<FactorioVersion> GetVersionAsync(CancellationToken cancellationToken = default)
-    {
-        return await Task.FromResult<FactorioVersion>(null);
-    }
-
     public async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
     {
         // find a downloaded factorio
