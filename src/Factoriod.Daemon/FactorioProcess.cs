@@ -56,6 +56,8 @@ public class FactorioProcess
             }
         }
 
+        this.logger.LogInformation("Using save {name} (path: {file})", this.options.Saves.GetSavePath().Name, this.options.Saves.GetSavePath());
+
         AddServerSettingsArguments(arguments);
         AddServerPlayerListsArguments(arguments);
         AddModsArguments(arguments);
