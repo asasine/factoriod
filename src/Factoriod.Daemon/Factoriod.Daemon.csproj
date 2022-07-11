@@ -34,17 +34,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="factoriod.service" CopyToPublishDirectory="PreserveNewest">
+    <Content Include="factoriod.service">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <LinuxPath>/etc/systemd/system/factoriod.service</LinuxPath>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <LinuxPath>/etc/factoriod/appsettings.json</LinuxPath>
     </Content>
 
     <Content Include="appsettings.Development.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Factoriod.Fetcher;
 using Factoriod.Models;
@@ -20,11 +21,6 @@ public class FactorioProcess
         this.options = options.Value;
         this.versionFetcher = versionFetcher;
         this.releaseFetcher = releaseFetcher;
-    }
-
-    public async Task<FactorioVersion> GetVersionAsync(CancellationToken cancellationToken = default)
-    {
-        return await Task.FromResult<FactorioVersion>(null);
     }
 
     public async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
@@ -60,16 +56,11 @@ public class FactorioProcess
             }
         }
 
-        AddArgumentIfFileExists(arguments, "--server-settings", this.options.Configuration.GetServerSettingsPath());
-        var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
-        if (addedWhitelist)
-        {
-            arguments.Add("--use-server-whitelist");
-        }
+        this.logger.LogInformation("Using save {name} (path: {file})", this.options.Saves.GetSavePath().Name, this.options.Saves.GetSavePath());
 
-        AddArgumentIfFileExists(arguments, "--server-banlist", this.options.Configuration.GetServerBanlistPath());
-        AddArgumentIfFileExists(arguments, "--server-adminlist", this.options.Configuration.GetServerAdminlistPath());
-        AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.GetModsRootDirectory());
+        AddServerSettingsArguments(arguments);
+        AddServerPlayerListsArguments(arguments);
+        AddModsArguments(arguments);
 
         using var factorioProcess = new Process()
         {
@@ -89,7 +80,6 @@ public class FactorioProcess
         await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
         return factorioProcess.ExitCode;
     }
-
 
     /// <summary>
     /// Gets the path to the Factorio directory to use.
@@ -353,6 +343,42 @@ public class FactorioProcess
         process.CancelErrorRead();
     }
 
+    private void AddServerSettingsArguments(List<string> arguments)
+    {
+        var serverSettingsPath = this.options.Configuration.GetServerSettingsPath();
+        if (serverSettingsPath.Exists)
+        {
+            using var serverSettingsStream = serverSettingsPath.OpenRead();
+            var serverSettings = JsonNode.Parse(serverSettingsStream);
+            if (serverSettings != null)
+            {
+                this.logger.LogInformation("Creating game '{name}': {description}", serverSettings["name"], serverSettings["description"]);
+            }
+        }
+
+        var exists = AddArgumentIfFileExists(arguments, "--server-settings", serverSettingsPath);
+        if (!exists)
+        {
+            this.logger.LogInformation("No server settings were found, using default values.");
+        }
+    }
+
+    private void AddServerPlayerListsArguments(List<string> arguments)
+    {
+        var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
+        if (addedWhitelist)
+        {
+            arguments.Add("--use-server-whitelist");
+        }
+
+        AddArgumentIfFileExists(arguments, "--server-banlist", this.options.Configuration.GetServerBanlistPath());
+        AddArgumentIfFileExists(arguments, "--server-adminlist", this.options.Configuration.GetServerAdminlistPath());
+    }
+
+    private void AddModsArguments(List<string> arguments)
+    {
+        AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.GetModsRootDirectory());
+    }
 
     private static bool AddArgumentIfFileExists(List<string> arguments, string option, FileInfo path)
     {
@@ -396,6 +422,12 @@ public class FactorioProcess
         if (e.Data.Contains("changing state from(CreatingGame) to(InGame)"))
         {
             this.logger.LogInformation("Factorio process started");
+        }
+
+        var userJoinLeave = Regex.Match(e.Data, @"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \[(?:JOIN|LEAVE)] (?<user>\w+) (?<action>joined|left) the game$");
+        if (userJoinLeave.Success)
+        {
+            this.logger.LogInformation("{user} {action} the game", userJoinLeave.Groups["user"].Value, userJoinLeave.Groups["action"].Value);
         }
     }
 
