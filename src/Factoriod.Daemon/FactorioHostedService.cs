@@ -42,5 +42,12 @@ namespace Factoriod.Daemon
                 return;
             }
         }
+
+        public async override Task StopAsync(CancellationToken cancellationToken)
+        {
+            // wait up to 5 seconds for the running task to complete
+            await Task.WhenAny(ExecuteTask, Task.Delay(TimeSpan.FromSeconds(5), cancellationToken));
+            await base.StopAsync(cancellationToken);
+        }
     }
 }

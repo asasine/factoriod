@@ -346,7 +346,6 @@ public class FactorioProcess
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        // TODO(#25): something is causing the last of the output to be lost and not sent to OnFactorioProcessOutputDataReceived
         await process.WaitForExitAsync(cancellationToken);
 
         process.CancelOutputRead();
