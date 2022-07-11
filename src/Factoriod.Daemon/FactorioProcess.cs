@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Factoriod.Fetcher;
 using Factoriod.Models;
@@ -60,7 +61,18 @@ public class FactorioProcess
             }
         }
 
-        AddArgumentIfFileExists(arguments, "--server-settings", this.options.Configuration.GetServerSettingsPath());
+        var serverSettingsPath = this.options.Configuration.GetServerSettingsPath();
+        if (serverSettingsPath.Exists)
+        {
+            using var serverSettingsStream = serverSettingsPath.OpenRead();
+            var serverSettings = JsonNode.Parse(serverSettingsStream);
+            if (serverSettings != null)
+            {
+                this.logger.LogInformation("Creating game '{name}': {description}", serverSettings["name"], serverSettings["description"]);
+            }
+        }
+
+        AddArgumentIfFileExists(arguments, "--server-settings", serverSettingsPath);
         var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
         if (addedWhitelist)
         {
