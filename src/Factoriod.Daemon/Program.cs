@@ -22,15 +22,15 @@ namespace Factoriod.Daemon
                 .ConfigureAppConfiguration((context, configuration) =>
                 {
                     var environment = context.HostingEnvironment;
-                    configuration
-                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                        .AddJsonFile($"appsettings.{environment.EnvironmentName}.json", true, true);
+                    configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
                     var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
                     if (configurationDirectory != null)
                     {
                         configuration.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), true, true);
                     }
+
+                    configuration.AddJsonFile($"appsettings.{environment.EnvironmentName}.json", true, true);
                 })
                 .ConfigureServices((context, services) =>
                 {
