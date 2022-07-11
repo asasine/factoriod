@@ -61,27 +61,9 @@ public class FactorioProcess
             }
         }
 
-        var serverSettingsPath = this.options.Configuration.GetServerSettingsPath();
-        if (serverSettingsPath.Exists)
-        {
-            using var serverSettingsStream = serverSettingsPath.OpenRead();
-            var serverSettings = JsonNode.Parse(serverSettingsStream);
-            if (serverSettings != null)
-            {
-                this.logger.LogInformation("Creating game '{name}': {description}", serverSettings["name"], serverSettings["description"]);
-            }
-        }
-
-        AddArgumentIfFileExists(arguments, "--server-settings", serverSettingsPath);
-        var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
-        if (addedWhitelist)
-        {
-            arguments.Add("--use-server-whitelist");
-        }
-
-        AddArgumentIfFileExists(arguments, "--server-banlist", this.options.Configuration.GetServerBanlistPath());
-        AddArgumentIfFileExists(arguments, "--server-adminlist", this.options.Configuration.GetServerAdminlistPath());
-        AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.GetModsRootDirectory());
+        AddServerSettingsArguments(arguments);
+        AddServerPlayerListsArguments(arguments);
+        AddModsArguments(arguments);
 
         using var factorioProcess = new Process()
         {
@@ -101,7 +83,6 @@ public class FactorioProcess
         await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
         return factorioProcess.ExitCode;
     }
-
 
     /// <summary>
     /// Gets the path to the Factorio directory to use.
@@ -365,6 +346,38 @@ public class FactorioProcess
         process.CancelErrorRead();
     }
 
+    private void AddServerSettingsArguments(List<string> arguments)
+    {
+        var serverSettingsPath = this.options.Configuration.GetServerSettingsPath();
+        if (serverSettingsPath.Exists)
+        {
+            using var serverSettingsStream = serverSettingsPath.OpenRead();
+            var serverSettings = JsonNode.Parse(serverSettingsStream);
+            if (serverSettings != null)
+            {
+                this.logger.LogInformation("Creating game '{name}': {description}", serverSettings["name"], serverSettings["description"]);
+            }
+        }
+
+        AddArgumentIfFileExists(arguments, "--server-settings", serverSettingsPath);
+    }
+
+    private void AddServerPlayerListsArguments(List<string> arguments)
+    {
+        var addedWhitelist = AddArgumentIfFileExists(arguments, "--server-whitelist", this.options.Configuration.GetServerWhitelistPath());
+        if (addedWhitelist)
+        {
+            arguments.Add("--use-server-whitelist");
+        }
+
+        AddArgumentIfFileExists(arguments, "--server-banlist", this.options.Configuration.GetServerBanlistPath());
+        AddArgumentIfFileExists(arguments, "--server-adminlist", this.options.Configuration.GetServerAdminlistPath());
+    }
+
+    private void AddModsArguments(List<string> arguments)
+    {
+        AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.GetModsRootDirectory());
+    }
 
     private static bool AddArgumentIfFileExists(List<string> arguments, string option, FileInfo path)
     {
