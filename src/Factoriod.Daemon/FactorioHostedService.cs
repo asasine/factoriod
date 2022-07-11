@@ -9,20 +9,13 @@ namespace Factoriod.Daemon
     public class FactorioHostedService : BackgroundService
     {
         private readonly ILogger logger;
-        private readonly Options.Factorio options;
         private readonly IHostApplicationLifetime lifetime;
-        private readonly VersionFetcher versionFetcher;
-        private readonly ReleaseFetcher releaseFetcher;
         private readonly FactorioProcess factorioProcess;
 
-        public FactorioHostedService(ILogger<FactorioHostedService> logger, IOptions<Options.Factorio> options,
-            IHostApplicationLifetime lifetime, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher, FactorioProcess factorioProcess)
+        public FactorioHostedService(ILogger<FactorioHostedService> logger, IHostApplicationLifetime lifetime, FactorioProcess factorioProcess)
         {
             this.logger = logger;
-            this.options = options.Value;
             this.lifetime = lifetime;
-            this.versionFetcher = versionFetcher;
-            this.releaseFetcher = releaseFetcher;
             this.factorioProcess = factorioProcess;
         }
 
