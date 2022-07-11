@@ -354,7 +354,11 @@ public class FactorioProcess
             }
         }
 
-        AddArgumentIfFileExists(arguments, "--server-settings", serverSettingsPath);
+        var exists = AddArgumentIfFileExists(arguments, "--server-settings", serverSettingsPath);
+        if (!exists)
+        {
+            this.logger.LogInformation("No server settings were found, using default values.");
+        }
     }
 
     private void AddServerPlayerListsArguments(List<string> arguments)
