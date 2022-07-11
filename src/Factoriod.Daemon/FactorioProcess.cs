@@ -15,6 +15,14 @@ public class FactorioProcess
     private readonly VersionFetcher versionFetcher;
     private readonly ReleaseFetcher releaseFetcher;
 
+    /// <summary>
+    /// Set to <see langword="true"/> if the factorio process shuts down due to an incompatible map version.
+    /// </summary>
+    /// <remarks>
+    /// This often occurs from loading a newer version of the map with an older version of the game.
+    /// </remarks>
+    private bool incompatibleMapVersionError = false;
+
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
         this.logger = logger;
@@ -78,6 +86,11 @@ public class FactorioProcess
         };
 
         await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
+        if (incompatibleMapVersionError)
+        {
+            // TODO(#24): Handle newer maps being loaded by older server versions
+        }
+
         return factorioProcess.ExitCode;
     }
 
@@ -414,8 +427,8 @@ public class FactorioProcess
         var badVersionMatch = Regex.Match(e.Data, @"Map version (?<new_version>\d+\.\d+\.\d+)-0 cannot be loaded because it is higher than the game version \((?<old_version>\d+\.\d+\.\d+)-0\)");
         if (badVersionMatch.Success)
         {
-            // TODO(#24): Handle newer maps being loaded by older server versions
             this.logger.LogWarning("Factorio map version {new_version} cannot be loaded because it is higher than the game version {old_version}", badVersionMatch.Groups["new_version"].Value, badVersionMatch.Groups["old_version"].Value);
+            incompatibleMapVersionError = true;
         }
 
         if (e.Data.Contains("changing state from(CreatingGame) to(InGame)"))
