@@ -66,8 +66,11 @@ namespace Factoriod.Daemon.Options
         public string RootDirectory { get; set; } = null!;
         public string Save { get; set; } = null!;
 
-        public FileInfo GetSavePath()
-            => new FileInfo(Path.Combine(this.RootDirectory, this.Save)).Resolve();
+        public DirectoryInfo GetRootDirectory()
+            => new DirectoryInfo(this.RootDirectory).Resolve();
+
+        public FileInfo? GetSavePath()
+            => this.Save == null ? null : new FileInfo(Path.Combine(this.RootDirectory, this.Save)).Resolve();
     }
 
     public sealed class FactorioMapGeneration

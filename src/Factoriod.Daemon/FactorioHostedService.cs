@@ -1,8 +1,5 @@
-using Factoriod.Fetcher;
-using Factoriod.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Factoriod.Daemon
 {
@@ -41,7 +38,13 @@ namespace Factoriod.Daemon
         public async override Task StopAsync(CancellationToken cancellationToken)
         {
             // wait up to 5 seconds for the running task to complete
-            await Task.WhenAny(ExecuteTask, Task.Delay(TimeSpan.FromSeconds(5), cancellationToken));
+            var infiniteDelay = Task.Delay(Timeout.Infinite, cancellationToken);
+            var completed = await Task.WhenAny(ExecuteTask, infiniteDelay);
+            if (completed == infiniteDelay)
+            {
+                this.logger.LogWarning("Unable to complete running task before ungraceful shutdown was requested.");
+            }
+
             await base.StopAsync(cancellationToken);
         }
     }

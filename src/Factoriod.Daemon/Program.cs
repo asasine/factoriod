@@ -11,7 +11,7 @@ namespace Factoriod.Daemon
     {
         public static async Task Main(string[] args)
         {
-            var host = Host.CreateDefaultBuilder(args)
+            await Host.CreateDefaultBuilder(args)
                 .ConfigureLogging(builder =>
                 {
                     builder.AddSimpleConsole(options =>
@@ -22,15 +22,15 @@ namespace Factoriod.Daemon
                 .ConfigureAppConfiguration((context, configuration) =>
                 {
                     var environment = context.HostingEnvironment;
-                    configuration
-                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                        .AddJsonFile($"appsettings.{environment.EnvironmentName}.json", true, true);
+                    configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
                     var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
                     if (configurationDirectory != null)
                     {
                         configuration.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), true, true);
                     }
+
+                    configuration.AddJsonFile($"appsettings.{environment.EnvironmentName}.json", true, true);
                 })
                 .ConfigureServices((context, services) =>
                 {
@@ -40,7 +40,7 @@ namespace Factoriod.Daemon
 
                     services.AddTransient<FactorioProcess>();
 
-                    services.AddOptions<Options.Factorio>() 
+                    services.AddOptions<Options.Factorio>()
                         .Configure(options =>
                         {
                             options.Executable = new Options.FactorioExecutable
@@ -66,9 +66,7 @@ namespace Factoriod.Daemon
                         .Bind(context.Configuration.GetSection("Factorio"))
                         .ValidateDataAnnotations();
                 })
-                .Build();
-
-            await host.RunAsync();
+                .RunConsoleAsync();
         }
     }
 }

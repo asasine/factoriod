@@ -15,6 +15,14 @@ public class FactorioProcess
     private readonly VersionFetcher versionFetcher;
     private readonly ReleaseFetcher releaseFetcher;
 
+    /// <summary>
+    /// Set to <see langword="true"/> if the factorio process shuts down due to an incompatible map version.
+    /// </summary>
+    /// <remarks>
+    /// This often occurs from loading a newer version of the map with an older version of the game.
+    /// </remarks>
+    private IncompatibleMapVersionError? incompatibleMapVersionError = null;
+
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
         this.logger = logger;
@@ -35,28 +43,27 @@ public class FactorioProcess
         if (factorioDirectory == null)
         {
             this.logger.LogWarning("Unable to find Factorio directory");
-            return 1;
+            return 2;
         }
 
         this.logger.LogInformation("Starting factorio process");
 
         var arguments = new List<string>();
-        var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Saves.GetSavePath());
-        if (!addedStartServer)
+        var savePath = await CreateSaveIfNotExists(factorioDirectory, cancellationToken);
+        if (savePath == null)
         {
-            this.logger.LogInformation("No save file found, creating one");
-            await CreateSaveIfNotExists(factorioDirectory, cancellationToken);
-
-            // try again
-            addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Saves.GetSavePath());
-            if (!addedStartServer)
-            {
-                this.logger.LogError("Unable to find save file {path}", this.options.Saves.GetSavePath());
-                return 1;
-            }
+            this.logger.LogWarning("Could not create save file.");
+            return 2;
         }
 
-        this.logger.LogInformation("Using save {name} (path: {file})", this.options.Saves.GetSavePath().Name, this.options.Saves.GetSavePath());
+        var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", savePath);
+        if (!addedStartServer)
+        {
+            this.logger.LogError("Unable to find save file {path}", savePath);
+            return 2;
+        }
+
+        this.logger.LogInformation("Using save {name} (path: {file})", savePath.Name, savePath);
 
         AddServerSettingsArguments(arguments);
         AddServerPlayerListsArguments(arguments);
@@ -78,6 +85,16 @@ public class FactorioProcess
         };
 
         await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
+        if (incompatibleMapVersionError != null)
+        {
+            this.logger.LogError("Could not run factorio because save file is from a newer version {newVersion} than the downloaded executable {oldVersion}: {path}",
+                incompatibleMapVersionError.NewVersion,
+                incompatibleMapVersionError.OldVersion,
+                savePath);
+
+            return 2;
+        }
+
         return factorioProcess.ExitCode;
     }
 
@@ -274,26 +291,45 @@ public class FactorioProcess
         return true;
     }
 
-    private async Task CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)
+    private async Task<FileInfo?> CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)
     {
         var savePath = this.options.Saves.GetSavePath();
+        if (savePath == null)
+        {
+            var savesRootDirectory = this.options.Saves.GetRootDirectory();
+
+            // ensure it's created, otherwise a DirectoryNotFoundException is thrown
+            savesRootDirectory.Create();
+
+            // choose the save which was modified most recently
+            savePath = savesRootDirectory.EnumerateFiles().MaxBy(file => file.LastWriteTimeUtc);
+        }
+
+        if (savePath == null)
+        {
+            // no save path specified and no save files found
+            savePath = new FileInfo(Path.Combine(this.options.Saves.GetRootDirectory().FullName, "save1.zip"));
+            this.logger.LogDebug("No save file found, creating {path}", savePath);
+        }
+
         if (savePath.Exists)
         {
-            return;
+            return savePath;
         }
 
         if (cancellationToken.IsCancellationRequested)
         {
-            return;
+            this.logger.LogDebug("Cancellation requested, not creating save.");
+            return null;
         }
 
         this.logger.LogInformation("Creating save file {path}", savePath);
 
         var arguments = new List<string>()
-            {
-                "--create",
-                savePath.FullName,
-            };
+        {
+            "--create",
+            savePath.FullName,
+        };
 
         AddArgumentIfFileExists(arguments, "--map-gen-settings", this.options.MapGeneration.GetMapGenSettingsPath());
         AddArgumentIfFileExists(arguments, "--map-settings", this.options.MapGeneration.GetMapSettingsPath());
@@ -319,6 +355,9 @@ public class FactorioProcess
         };
 
         await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
+
+        savePath.Refresh();
+        return savePath;
     }
 
     private async Task StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
@@ -414,8 +453,10 @@ public class FactorioProcess
         var badVersionMatch = Regex.Match(e.Data, @"Map version (?<new_version>\d+\.\d+\.\d+)-0 cannot be loaded because it is higher than the game version \((?<old_version>\d+\.\d+\.\d+)-0\)");
         if (badVersionMatch.Success)
         {
-            // TODO(#24): Handle newer maps being loaded by older server versions
-            this.logger.LogWarning("Factorio map version {new_version} cannot be loaded because it is higher than the game version {old_version}", badVersionMatch.Groups["new_version"].Value, badVersionMatch.Groups["old_version"].Value);
+            var newVersion = Version.Parse(badVersionMatch.Groups["new_version"].Value);
+            var oldVersion = Version.Parse(badVersionMatch.Groups["old_version"].Value);
+            this.logger.LogWarning("Factorio map version {new_version} cannot be loaded because it is higher than the game version {old_version}", newVersion, oldVersion);
+            incompatibleMapVersionError = new IncompatibleMapVersionError(OldVersion: oldVersion, NewVersion: newVersion);
         }
 
         if (e.Data.Contains("changing state from(CreatingGame) to(InGame)"))
@@ -439,4 +480,6 @@ public class FactorioProcess
 
         this.logger.LogWarning("Factorio process error: {error}", e.Data);
     }
+
+    private record IncompatibleMapVersionError(Version OldVersion, Version NewVersion);
 }
