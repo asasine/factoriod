@@ -43,28 +43,27 @@ public class FactorioProcess
         if (factorioDirectory == null)
         {
             this.logger.LogWarning("Unable to find Factorio directory");
-            return 1;
+            return 2;
         }
 
         this.logger.LogInformation("Starting factorio process");
 
         var arguments = new List<string>();
-        var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Saves.GetSavePath());
-        if (!addedStartServer)
+        var savePath = await CreateSaveIfNotExists(factorioDirectory, cancellationToken);
+        if (savePath == null)
         {
-            this.logger.LogInformation("No save file found, creating one");
-            await CreateSaveIfNotExists(factorioDirectory, cancellationToken);
-
-            // try again
-            addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", this.options.Saves.GetSavePath());
-            if (!addedStartServer)
-            {
-                this.logger.LogError("Unable to find save file {path}", this.options.Saves.GetSavePath());
-                return 1;
-            }
+            this.logger.LogWarning("Could not create save file.");
+            return 2;
         }
 
-        this.logger.LogInformation("Using save {name} (path: {file})", this.options.Saves.GetSavePath().Name, this.options.Saves.GetSavePath());
+        var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", savePath);
+        if (!addedStartServer)
+        {
+            this.logger.LogError("Unable to find save file {path}", savePath);
+            return 2;
+        }
+
+        this.logger.LogInformation("Using save {name} (path: {file})", savePath.Name, savePath);
 
         AddServerSettingsArguments(arguments);
         AddServerPlayerListsArguments(arguments);
@@ -89,6 +88,7 @@ public class FactorioProcess
         if (incompatibleMapVersionError)
         {
             // TODO(#24): Handle newer maps being loaded by older server versions
+            // Recreate a new save with the existing generation settings but a new name?
         }
 
         return factorioProcess.ExitCode;
@@ -287,26 +287,45 @@ public class FactorioProcess
         return true;
     }
 
-    private async Task CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)
+    private async Task<FileInfo?> CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)
     {
         var savePath = this.options.Saves.GetSavePath();
+        if (savePath == null)
+        {
+            var savesRootDirectory = this.options.Saves.GetRootDirectory();
+
+            // ensure it's created, otherwise a DirectoryNotFoundException is thrown
+            savesRootDirectory.Create();
+
+            // choose the save which was modified most recently
+            savePath = savesRootDirectory.EnumerateFiles().MaxBy(file => file.LastWriteTimeUtc);
+        }
+
+        if (savePath == null)
+        {
+            // no save path specified and no save files found
+            savePath = new FileInfo(Path.Combine(this.options.Saves.GetRootDirectory().FullName, "save1.zip"));
+            this.logger.LogDebug("No save file found, creating {path}", savePath);
+        }
+
         if (savePath.Exists)
         {
-            return;
+            return savePath;
         }
 
         if (cancellationToken.IsCancellationRequested)
         {
-            return;
+            this.logger.LogDebug("Cancellation requested, not creating save.");
+            return null;
         }
 
         this.logger.LogInformation("Creating save file {path}", savePath);
 
         var arguments = new List<string>()
-            {
-                "--create",
-                savePath.FullName,
-            };
+        {
+            "--create",
+            savePath.FullName,
+        };
 
         AddArgumentIfFileExists(arguments, "--map-gen-settings", this.options.MapGeneration.GetMapGenSettingsPath());
         AddArgumentIfFileExists(arguments, "--map-settings", this.options.MapGeneration.GetMapSettingsPath());
@@ -332,6 +351,9 @@ public class FactorioProcess
         };
 
         await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
+
+        savePath.Refresh();
+        return savePath;
     }
 
     private async Task StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
