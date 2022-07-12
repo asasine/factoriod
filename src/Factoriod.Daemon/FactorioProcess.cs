@@ -21,7 +21,7 @@ public class FactorioProcess
     /// <remarks>
     /// This often occurs from loading a newer version of the map with an older version of the game.
     /// </remarks>
-    private bool incompatibleMapVersionError = false;
+    private IncompatibleMapVersionError? incompatibleMapVersionError = null;
 
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
@@ -85,10 +85,14 @@ public class FactorioProcess
         };
 
         await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
-        if (incompatibleMapVersionError)
+        if (incompatibleMapVersionError != null)
         {
-            // TODO(#24): Handle newer maps being loaded by older server versions
-            // Recreate a new save with the existing generation settings but a new name?
+            this.logger.LogError("Could not run factorio because save file is from a newer version {newVersion} than the downloaded executable {oldVersion}: {path}",
+                incompatibleMapVersionError.NewVersion,
+                incompatibleMapVersionError.OldVersion,
+                savePath);
+
+            return 2;
         }
 
         return factorioProcess.ExitCode;
@@ -449,8 +453,10 @@ public class FactorioProcess
         var badVersionMatch = Regex.Match(e.Data, @"Map version (?<new_version>\d+\.\d+\.\d+)-0 cannot be loaded because it is higher than the game version \((?<old_version>\d+\.\d+\.\d+)-0\)");
         if (badVersionMatch.Success)
         {
-            this.logger.LogWarning("Factorio map version {new_version} cannot be loaded because it is higher than the game version {old_version}", badVersionMatch.Groups["new_version"].Value, badVersionMatch.Groups["old_version"].Value);
-            incompatibleMapVersionError = true;
+            var newVersion = Version.Parse(badVersionMatch.Groups["new_version"].Value);
+            var oldVersion = Version.Parse(badVersionMatch.Groups["old_version"].Value);
+            this.logger.LogWarning("Factorio map version {new_version} cannot be loaded because it is higher than the game version {old_version}", newVersion, oldVersion);
+            incompatibleMapVersionError = new IncompatibleMapVersionError(OldVersion: oldVersion, NewVersion: newVersion);
         }
 
         if (e.Data.Contains("changing state from(CreatingGame) to(InGame)"))
@@ -474,4 +480,6 @@ public class FactorioProcess
 
         this.logger.LogWarning("Factorio process error: {error}", e.Data);
     }
+
+    private record IncompatibleMapVersionError(Version OldVersion, Version NewVersion);
 }
