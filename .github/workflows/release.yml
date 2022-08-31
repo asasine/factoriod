@@ -22,7 +22,7 @@ jobs:
     - name: Setup dotnet-deb tool
       run: dotnet tool run dotnet-deb install
     - name: Create debian package
-      run: dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
+      run: dotnet tool run dotnet-deb -c Release -r linux-x64 src/Factoriod.Daemon/Factoriod.Daemon.csproj
     - uses: actions/upload-artifact@v3
       with:
         name: factoriod-deb
