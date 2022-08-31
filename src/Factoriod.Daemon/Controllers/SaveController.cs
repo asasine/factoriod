@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Factoriod.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Factoriod.Daemon.Controllers
 {
@@ -6,12 +8,30 @@ namespace Factoriod.Daemon.Controllers
     [ApiController]
     public class SaveController : ControllerBase
     {
-        [HttpGet(Name = "ListSaves")]
-        public IAsyncEnumerable<string> List()
+        private readonly ILogger logger;
+        private readonly Options.Factorio options;
+
+        public SaveController(ILogger<SaveController> logger, IOptions<Options.Factorio> options)
         {
-            return Enumerable.Range(1, 5)
-                .Select(x => x.ToString())
-                .ToAsyncEnumerable();
+            this.logger = logger;
+            this.options = options.Value;
+        }
+
+        [HttpGet(Name = "ListSaves")]
+        public IEnumerable<Save> List()
+        {
+            var savesRootDirectory = this.options.Saves.GetRootDirectory();
+
+            this.logger.LogDebug("Scanning {path} for saves", savesRootDirectory);
+
+            // ensure it's created, otherwise a DirectoryNotFoundException is thrown
+            savesRootDirectory.Create();
+
+            // choose the save which was modified most recently
+            return savesRootDirectory
+                .EnumerateFiles()
+                .OrderByDescending(file => file.LastWriteTimeUtc)
+                .Select(file => new Save(file.Name, new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero)));
         }
     }
 }
