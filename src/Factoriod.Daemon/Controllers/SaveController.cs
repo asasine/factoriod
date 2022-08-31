@@ -1,4 +1,5 @@
 ﻿using Factoriod.Models;
+using Factoriod.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -31,7 +32,22 @@ namespace Factoriod.Daemon.Controllers
             return savesRootDirectory
                 .EnumerateFiles()
                 .OrderByDescending(file => file.LastWriteTimeUtc)
-                .Select(file => new Save(file.Name, new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero)));
+                .Select(file => new Save(file));
+        }
+
+        [HttpGet("{name}", Name = "GetSave")]
+        public ActionResult<Save> Get(string name)
+        {
+            var file = new FileInfo(Path.Combine(this.options.Saves.RootDirectory, $"{name}.zip")).Resolve();
+            this.logger.LogDebug("Scanning {path} for a save named {save}", file, name);
+            if (file.Exists)
+            {
+                return Ok(new Save(file));
+            }
+            else
+            {
+                return NotFound();
+            }
         }
     }
 }
