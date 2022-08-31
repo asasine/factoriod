@@ -1,9 +1,4 @@
 ﻿using Factoriod.Fetcher;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 
 namespace Factoriod.Daemon
 {
@@ -11,62 +6,61 @@ namespace Factoriod.Daemon
     {
         public static async Task Main(string[] args)
         {
-            await Host.CreateDefaultBuilder(args)
-                .ConfigureLogging(builder =>
+            var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
+            //builder.Services.AddHostedService<FactorioHostedService>();
+            builder.Services.AddHttpClient<VersionFetcher>();
+            builder.Services.AddHttpClient<ReleaseFetcher>();
+
+            builder.Services.AddTransient<FactorioProcess>();
+
+            builder.Services.AddOptions<Options.Factorio>()
+                .Configure(options =>
                 {
-                    builder.AddSimpleConsole(options =>
+                    options.Executable = new Options.FactorioExecutable
                     {
-                        options.ColorBehavior = LoggerColorBehavior.Default;
-                    });
-                })
-                .ConfigureAppConfiguration((context, configuration) =>
-                {
-                    var environment = context.HostingEnvironment;
-                    configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                        DownloadDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY")!,
+                    };
 
-                    var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
-                    if (configurationDirectory != null)
+                    options.Configuration = new Options.FactorioConfiguration
                     {
-                        configuration.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), true, true);
-                    }
+                        RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
+                    };
 
-                    configuration.AddJsonFile($"appsettings.{environment.EnvironmentName}.json", true, true);
+                    options.Saves = new Options.FactorioSaves
+                    {
+                        RootDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY")!,
+                    };
+
+                    options.MapGeneration = new Options.FactorioMapGeneration
+                    {
+                        RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
+                    };
                 })
-                .ConfigureServices((context, services) =>
-                {
-                    services.AddHostedService<FactorioHostedService>();
-                    services.AddHttpClient<VersionFetcher>();
-                    services.AddHttpClient<ReleaseFetcher>();
+                .Bind(builder.Configuration.GetSection("Factorio"))
+                .ValidateDataAnnotations();
 
-                    services.AddTransient<FactorioProcess>();
 
-                    services.AddOptions<Options.Factorio>()
-                        .Configure(options =>
-                        {
-                            options.Executable = new Options.FactorioExecutable
-                            {
-                                DownloadDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY")!,
-                            };
+            var app = builder.Build();
 
-                            options.Configuration = new Options.FactorioConfiguration
-                            {
-                                RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
-                            };
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
-                            options.Saves = new Options.FactorioSaves
-                            {
-                                RootDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY")!,
-                            };
+            app.UseHttpsRedirection();
 
-                            options.MapGeneration = new Options.FactorioMapGeneration
-                            {
-                                RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
-                            };
-                        })
-                        .Bind(context.Configuration.GetSection("Factorio"))
-                        .ValidateDataAnnotations();
-                })
-                .RunConsoleAsync();
+            app.UseAuthorization();
+
+            app.MapControllers();
+
+            await app.RunAsync();
         }
     }
 }
