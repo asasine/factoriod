@@ -1,4 +1,6 @@
-﻿using Factoriod.Fetcher;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Factoriod.Fetcher;
 
 namespace Factoriod.Daemon
 {
@@ -8,7 +10,13 @@ namespace Factoriod.Daemon
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                    options.JsonSerializerOptions.WriteIndented = true;
+                });
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 

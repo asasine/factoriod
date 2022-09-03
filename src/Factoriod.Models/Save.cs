@@ -1,15 +1,11 @@
 ﻿namespace Factoriod.Models;
 
-public readonly record struct Save(string Name, DateTimeOffset LastWriteTime)
+public readonly record struct Save(string Path)
 {
-    public Save(FileInfo file)
-        : this(GetSaveName(file), new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero))
-    {
-    }
 
-    public static string GetSaveName(FileInfo file)
-    {
-        var parts = file.Name.Split('.');
-        return string.Join(".", parts.Take(parts.Length - 1));
-    }
+    private readonly Lazy<string> name = new(() => GetSaveName(Path));
+    public string Name => name.Value;
+    public DateTimeOffset LastWriteTime => new(File.GetLastWriteTimeUtc(Path), TimeSpan.Zero);
+
+    private static string GetSaveName(string file) => System.IO.Path.GetFileNameWithoutExtension(file);
 }

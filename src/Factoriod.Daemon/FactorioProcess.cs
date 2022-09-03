@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Factoriod.Daemon.Models;
 using Factoriod.Fetcher;
 using Factoriod.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Factoriod.Daemon;
@@ -11,17 +11,20 @@ namespace Factoriod.Daemon;
 public class FactorioProcess
 {
     private readonly ILogger<FactorioProcess> logger;
-    private Options.Factorio options;
+    private readonly Options.Factorio options;
     private readonly VersionFetcher versionFetcher;
     private readonly ReleaseFetcher releaseFetcher;
 
+    public ServerStatus ServerStatus { get; init; }
+
     /// <summary>
-    /// Set to <see langword="true"/> if the factorio process shuts down due to an incompatible map version.
+    /// Set to a value if the factorio process shuts down due to an error state.
     /// </summary>
     /// <remarks>
     /// This often occurs from loading a newer version of the map with an older version of the game.
+    /// See <see cref="FactorioException"/> and derived types for possible faults.
     /// </remarks>
-    private IncompatibleMapVersionError? incompatibleMapVersionError = null;
+    private FactorioException? incompatibleMapVersionError = null;
 
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
@@ -29,6 +32,7 @@ public class FactorioProcess
         this.options = options.Value;
         this.versionFetcher = versionFetcher;
         this.releaseFetcher = releaseFetcher;
+        this.ServerStatus = new ServerStatus();
     }
 
     public async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
@@ -84,15 +88,20 @@ public class FactorioProcess
             },
         };
 
+        this.ServerStatus.SetRunning(new Save(savePath.FullName));
         await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
+        this.ServerStatus.ServerState = ServerState.Exited;
+
         if (incompatibleMapVersionError != null)
         {
-            this.logger.LogError("Could not run factorio because save file is from a newer version {newVersion} than the downloaded executable {oldVersion}: {path}",
-                incompatibleMapVersionError.NewVersion,
-                incompatibleMapVersionError.OldVersion,
-                savePath);
+            this.ServerStatus.SetFaulted(incompatibleMapVersionError);
+            this.logger.LogError("Could not run factorio", incompatibleMapVersionError);
 
             return 2;
+        }
+        else
+        {
+            this.ServerStatus.ServerState = ServerState.Exited;
         }
 
         return factorioProcess.ExitCode;
@@ -456,7 +465,7 @@ public class FactorioProcess
             var newVersion = Version.Parse(badVersionMatch.Groups["new_version"].Value);
             var oldVersion = Version.Parse(badVersionMatch.Groups["old_version"].Value);
             this.logger.LogWarning("Factorio map version {new_version} cannot be loaded because it is higher than the game version {old_version}", newVersion, oldVersion);
-            incompatibleMapVersionError = new IncompatibleMapVersionError(OldVersion: oldVersion, NewVersion: newVersion);
+            incompatibleMapVersionError = new IncompatibleMapVersionException(oldVersion, newVersion, this.ServerStatus.Save);
         }
 
         if (e.Data.Contains("changing state from(CreatingGame) to(InGame)"))

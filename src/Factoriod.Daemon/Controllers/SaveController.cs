@@ -32,15 +32,15 @@ namespace Factoriod.Daemon.Controllers
             return savesRootDirectory
                 .EnumerateFiles()
                 .OrderByDescending(file => file.LastWriteTimeUtc)
-                .Select(file => new Save(file));
+                .Select(file => new Save(file.FullName));
         }
 
         [HttpGet("{name}", Name = "GetSave")]
         public ActionResult<Save> Get(string name)
         {
-            var file = new FileInfo(Path.Combine(this.options.Saves.RootDirectory, $"{name}.zip")).Resolve();
+            var file = Path.Combine(this.options.Saves.RootDirectory, $"{name}.zip");
             this.logger.LogDebug("Scanning {path} for a save named {save}", file, name);
-            if (file.Exists)
+            if (System.IO.File.Exists(file))
             {
                 return Ok(new Save(file));
             }
