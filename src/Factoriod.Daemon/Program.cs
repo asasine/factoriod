@@ -12,7 +12,7 @@ namespace Factoriod.Daemon
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            //builder.Services.AddHostedService<FactorioHostedService>();
+            builder.Services.AddHostedService<FactorioHostedService>();
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
 
@@ -53,8 +53,6 @@ namespace Factoriod.Daemon
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
-            app.UseHttpsRedirection();
 
             app.UseAuthorization();
 
