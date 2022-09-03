@@ -16,7 +16,7 @@ namespace Factoriod.Daemon
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
 
-            builder.Services.AddTransient<FactorioProcess>();
+            builder.Services.AddSingleton<FactorioProcess>();
 
             builder.Services.AddOptions<Options.Factorio>()
                 .Configure(options =>
