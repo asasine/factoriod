@@ -108,6 +108,22 @@ public class FactorioProcess
     }
 
     /// <summary>
+    /// Restarts the executing factorio process with the provided <paramref name="save"/>.
+    /// </summary>
+    /// <param name="save">The new save to start the factorio process with.</param>
+    /// <exception cref="NotImplementedException">The method has not been implemented yet.</exception>
+    /// <exception cref="FileNotFoundException">The save file was not found.</exception>
+    public void SetSave(Save save)
+    {
+        if (!File.Exists(save.Path))
+        {
+            throw new FileNotFoundException("Could not find provided save file", save.Path);
+        }
+
+        //throw new NotImplementedException();
+    }
+
+    /// <summary>
     /// Gets the path to the Factorio directory to use.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token to stop the process early.</param>

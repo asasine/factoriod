@@ -11,11 +11,13 @@ namespace Factoriod.Daemon.Controllers
     {
         private readonly ILogger logger;
         private readonly Options.Factorio options;
+        private readonly FactorioProcess factorioProcess;
 
-        public SaveController(ILogger<SaveController> logger, IOptions<Options.Factorio> options)
+        public SaveController(ILogger<SaveController> logger, IOptions<Options.Factorio> options, FactorioProcess factorioProcess)
         {
             this.logger = logger;
             this.options = options.Value;
+            this.factorioProcess = factorioProcess;
         }
 
         [HttpGet(Name = "ListSaves")]
@@ -48,6 +50,21 @@ namespace Factoriod.Daemon.Controllers
             {
                 return NotFound();
             }
+        }
+
+        [HttpPut("{name}", Name = "SetSave")]
+        public ActionResult<Save> SetSave(string name)
+        {
+            var file = PathUtilities.Resolve(Path.Combine(this.options.Saves.RootDirectory, $"{name}.zip"));
+            this.logger.LogDebug("Attempting to set save to {path} for a save named {save}", file, name);
+            if (!System.IO.File.Exists(file))
+            {
+                return NotFound();
+            }
+
+            var save = new Save(file);
+            this.factorioProcess.SetSave(save);
+            return AcceptedAtRoute("GetServerStatus");
         }
     }
 }
