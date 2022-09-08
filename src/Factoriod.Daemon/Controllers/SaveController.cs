@@ -40,7 +40,7 @@ namespace Factoriod.Daemon.Controllers
         [HttpGet("{name}", Name = "GetSave")]
         public ActionResult<Save> Get(string name)
         {
-            var file = Path.Combine(this.options.Saves.RootDirectory, $"{name}.zip");
+            var file = PathUtilities.Resolve(Path.Combine(this.options.Saves.RootDirectory, $"{name}.zip"));
             this.logger.LogDebug("Scanning {path} for a save named {save}", file, name);
             if (System.IO.File.Exists(file))
             {
