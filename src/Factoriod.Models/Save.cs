@@ -1,5 +1,15 @@
 ﻿namespace Factoriod.Models;
 
+/// <summary>
+/// A factorio saved game.
+/// </summary>
+/// <param name="Path">
+/// The path to the saved game.
+/// 
+/// <para>
+/// <paramref name="Path"/> must be a <see cref="string"/> because <see cref="FileInfo"/> is not serializable.
+/// </para>
+/// </param>
 public readonly record struct Save(string Path)
 {
 
