@@ -2,31 +2,66 @@ name: Release
 
 on:
   workflow_dispatch:
-  release:
-    types:
-      - published
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        default: '0.0.0'
     
 jobs:
   build:
+    if: github.repository == 'asasine/factoriod'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
+
+    - name: Update project version
+      uses: vers-one/dotnet-project-version-updater@v1.3
+      with:
+        version: ${{ inputs.version }}
+        files: src/*/*.csproj
+    - name: Stage version update changes
+      run: git add src/*.csproj
+
     - name: Setup local .NET tools
       run: dotnet tool restore
     - name: Setup dotnet-deb tool
       run: dotnet tool run dotnet-deb install
     - name: Create debian package
-      run: dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
-    - name: Configure GPG Key
       run: |
-        echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import
+        dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
+        cp src/Factoriod.Daemon/bin/Release/net6.0/factoriod.*.deb docs/
+
+    - name: Configure GPG Key
+      run: echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import
       env:
         GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
-    - uses: actions/upload-artifact@v3
+    - name: Update Packages, Release, and Sign
+      run: |
+        dpkg-scanpackages --multiversion docs/ > docs/Packages && gzip -k -f docs/Packages
+        apt-ftparchive release docs/ > docs/Release
+        gpg --batch --yes --armor --detach-sign --output docs/Release.gpg docs/Release
+        gpg --batch --yes --clearsign --output docs/InRelease docs/Release
+        git add docs/
+      env:
+        GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+
+    - name: Commit and push changes
+      run: |
+        git commit -m "Updated packages to ${{ inputs.version }}"
+        git push
+
+    - name: Create release
+      uses: softprops/action-gh-release@v1
       with:
-        name: factoriod-deb
-        path: src/Factoriod.Daemon/bin/Release/net6.0/factoriod.*.deb
+        name: v${{ inputs.version }}
+        tag_name: v${{ inputs.version }}
+        draft: true
+        generate_release_notes: true
