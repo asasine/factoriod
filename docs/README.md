@@ -5,7 +5,7 @@ A factorio daemon for Ubuntu
 ## Installation
 1. Add the APT repository:
     ```bash
-    curl -s --compressed 'https://asasine.github.io/factoriod/KEY.gpg' | sudo apt-key add -
+    sudo curl -s --compressed -o /etc/apt/trusted.gpg.d/asasine_factoriod.asc 'https://asasine.github.io/factoriod/KEY.asc'
     sudo curl -s --compressed -o /etc/apt/sources.list.d/asasine_factoriod.list https://asasine.github.io/factoriod/sources.list
     ```
 
