@@ -55,7 +55,7 @@ jobs:
 
     - name: Commit and push changes
       run: |
-        git commit -m "Updated packages to ${{ inputs.version }}"
+        git commit -m "Updated version to ${{ inputs.version }}"
         git push
 
     - name: Create release
