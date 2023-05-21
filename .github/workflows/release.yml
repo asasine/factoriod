@@ -34,7 +34,7 @@ jobs:
         dotnet tool restore
         dotnet tool run dotnet-deb install
         dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
-        cp src/Factoriod.Daemon/bin/Release/net6.0/factoriod.*.deb docs/
+        cp -v src/Factoriod.Daemon/bin/Release/net6.0/factoriod.*.deb docs/
 
     - name: Import GPG key
       uses: crazy-max/ghaction-import-gpg@v5
@@ -65,3 +65,5 @@ jobs:
         tag_name: v${{ inputs.version }}
         draft: true
         generate_release_notes: true
+        files: |
+          docs/factoriod.${{ inputs.version }}.deb
