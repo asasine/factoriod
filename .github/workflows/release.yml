@@ -21,6 +21,11 @@ jobs:
       run: dotnet tool run dotnet-deb install
     - name: Create debian package
       run: dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
+    - name: Configure GPG Key
+      run: |
+        echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import
+      env:
+        GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
     - uses: actions/upload-artifact@v3
       with:
         name: factoriod-deb
