@@ -19,6 +19,12 @@
 
   <PropertyGroup>
     <PackagePrefix>factoriod</PackagePrefix>
+    <Prefix>/usr/local/lib/factoriod</Prefix>
+
+    <DebSection>games</DebSection>
+    <DebPriority>optional</DebPriority>
+    <DebPackageArchitecture>amd64</DebPackageArchitecture>
+
     <CreateUser>true</CreateUser>
     <UserName>factorio</UserName>
 
