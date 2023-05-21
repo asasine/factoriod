@@ -26,7 +26,7 @@ jobs:
       uses: vers-one/dotnet-project-version-updater@v1.3
       with:
         version: ${{ inputs.version }}
-        files: src/*/*.csproj
+        file: src/Factoriod.Daemon/Factoriod.Daemon.csproj
     - name: Stage version update changes
       run: git add src/*.csproj
 
@@ -50,8 +50,6 @@ jobs:
         gpg --batch --yes --armor --detach-sign --output docs/Release.gpg docs/Release
         gpg --batch --yes --clearsign --output docs/InRelease docs/Release
         git add docs/
-      env:
-        GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
 
     - name: Commit and push changes
       run: |
