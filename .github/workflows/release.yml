@@ -37,7 +37,7 @@ jobs:
         dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
         cp src/Factoriod.Daemon/bin/Release/net6.0/factoriod.*.deb docs/
 
-    - name: Import GPG
+    - name: Import GPG key
       uses: crazy-max/ghaction-import-gpg@v5
       with:
         gpg_private_key: ${{ secrets.GPG_SIGNING_KEY }}
@@ -45,13 +45,14 @@ jobs:
         git_user_signingkey: true
         git_commit_gpgsign: true
 
-    - name: Update Packages, Release, and Sign
+    - name: Update packages and sign
+      working-directory: docs
       run: |
-        dpkg-scanpackages --multiversion docs/ > docs/Packages && gzip -k -f docs/Packages
-        apt-ftparchive release docs/ > docs/Release
-        gpg --batch --yes --armor --detach-sign --output docs/Release.gpg docs/Release
-        gpg --batch --yes --clearsign --output docs/InRelease docs/Release
-        git add docs/
+        dpkg-scanpackages --multiversion . > Packages && gzip -k -f Packages
+        apt-ftparchive release . > Release
+        gpg --batch --yes --armor --detach-sign --output Release.gpg Release
+        gpg --batch --yes --clearsign --output InRelease Release
+        git add .
 
     - name: Commit and push changes
       run: |
