@@ -1,12 +1,12 @@
 # factoriod
 [![.NET](https://github.com/asasine/factoriod/actions/workflows/dotnet.yml/badge.svg)](https://github.com/asasine/factoriod/actions/workflows/dotnet.yml)
 
-A factorio daemon for Ubuntu
+A factorio daemon for Ubuntu.
 
 ## Installation
 1. Add the APT repository:
     ```bash
-    curl -s --compressed 'https://asasine.github.io/factoriod/KEY.gpg' | sudo apt-key add -
+    sudo curl -s --compressed -o /etc/apt/trusted.gpg.d/asasine_factoriod.asc 'https://asasine.github.io/factoriod/KEY.asc'
     sudo curl -s --compressed -o /etc/apt/sources.list.d/asasine_factoriod.list https://asasine.github.io/factoriod/sources.list
     ```
 
@@ -28,25 +28,6 @@ A factorio daemon for Ubuntu
 1. View logs:
     ```bash
     journalctl -u factoriod
-    ```
-
-## Contributing
-### Prerequisites
-1. Linux (tested on Ubuntu)
-1. [Install .NET 6.0 SDK](https://dotnet.microsoft.com/en-us/download)
-1. Clone the repo
-1. Open a terminal to the cloned repo
-1. Run: `dotnet tool restore`
-1. Run: `dotnet tool run dotnet-deb install`
-
-### Launching the daemon
-1. Open a terminal to the cloned repo
-1. Run: `dotnet run --project src/Factoriod.Daemon`
-
-### Building the debian package
-1. Open a terminal to the cloned repo
-1. Run: `dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj`
-1. Run: `sudo apt install ./src/Factoriod.Daemon/bin/Release/net6.0/linux-x64/factoriod.*.deb`
 
 ## Configuration
 The daemon reads and stores configuration in _/etc/factoriod/_ directory by default.
