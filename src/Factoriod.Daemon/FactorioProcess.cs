@@ -69,6 +69,12 @@ public class FactorioProcess
         AddServerPlayerListsArguments(arguments);
         AddModsArguments(arguments);
 
+        var saveBackup = BackupFile(savePath);
+        if (saveBackup == null)
+        {
+            this.logger.LogWarning("Failed to create backup for save file {path}", savePath);
+        }
+
         using var factorioProcess = new Process()
         {
             StartInfo = new ProcessStartInfo
@@ -358,6 +364,36 @@ public class FactorioProcess
 
         savePath.Refresh();
         return savePath;
+    }
+
+    /// <summary>
+    /// Backs up a file by copying it to a new file with the specified extension.
+    /// Any file at the backup path will be overwritten.
+    /// </summary>
+    /// <param name="file">The file to backup.</param>
+    /// <param name="extension">The extension to append to the filename.</param>
+    /// <returns><see langword="true"/> if the file was backed up successfully, otherwise <see langword="false"/>.</returns>
+    private static FileInfo? BackupFile(FileInfo file, string extension = ".bak")
+    {
+        if (file.Directory == null)
+        {
+            return null;
+        }
+
+        if (!file.Exists)
+        {
+            return null;
+        }
+
+        extension = extension.Trim('.');
+
+        var backupPath = new FileInfo(Path.Combine(file.Directory.FullName, $"{file.Name}.{extension}"));
+        if (backupPath.Exists)
+        {
+            backupPath.Delete();
+        }
+
+        return file.CopyTo(backupPath.FullName, true);
     }
 
     private async Task StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
