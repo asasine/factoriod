@@ -12,6 +12,7 @@ Type=simple
 ExecStart=/usr/local/bin/Factoriod.Daemon
 User=factorio
 Group=factorio
+WorkingDirectory=/usr/local/lib/factoriod
 StateDirectory=factoriod
 CacheDirectory=factoriod
 ConfigurationDirectory=factoriod
