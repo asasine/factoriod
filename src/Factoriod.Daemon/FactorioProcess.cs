@@ -219,15 +219,17 @@ public class FactorioProcess
     private async Task<Version?> GetRequestedVersionAsync(CancellationToken cancellationToken = default)
     {
         var unparsedRequestedVersion = this.options.Executable.Version;
+        this.logger.LogDebug("Requested version: {version}", unparsedRequestedVersion);
         if (unparsedRequestedVersion == "latest")
         {
+            this.logger.LogDebug("Getting latest version from Factorio API");
             var latestVersion = await this.versionFetcher.GetLatestHeadlessVersionAsync(this.options.Executable.UseExperimental, cancellationToken);
             if (latestVersion == null)
             {
                 return null;
             }
 
-            unparsedRequestedVersion = latestVersion.Version.ToString();
+            return latestVersion.Version;
         }
 
         return Version.Parse(unparsedRequestedVersion);

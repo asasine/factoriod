@@ -26,6 +26,13 @@ namespace Factoriod.Daemon
 
             builder.Services.AddSingleton<FactorioProcess>();
 
+            var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
+            if (configurationDirectory is not null)
+            {
+                builder.Configuration.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), optional: true, reloadOnChange: true);
+                builder.Configuration.AddJsonFile(Path.Combine(configurationDirectory, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: true);
+            }
+
             builder.Services.AddOptions<Options.Factorio>()
                 .Configure(options =>
                 {
@@ -49,7 +56,7 @@ namespace Factoriod.Daemon
                         RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
                     };
                 })
-                .Bind(builder.Configuration.GetSection("Factorio"))
+                .BindConfiguration("Factorio")
                 .ValidateDataAnnotations();
 
 
