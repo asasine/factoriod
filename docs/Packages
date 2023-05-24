@@ -14,3 +14,67 @@ Priority: extra
 Homepage: https://github.com/asasine/factoriod
 Description: A factorio daemon for Ubuntu
 
+Package: factoriod
+Version: 0.1.4
+Architecture: amd64
+Maintainer: asasine
+Installed-Size: 3492
+Depends: dotnet-runtime-6.0
+Filename: ./factoriod.0.1.4.deb
+Size: 634120
+MD5sum: 12ae824e7356516e1d16aaad5351208a
+SHA1: ec99f88b27bb6eff23b2f2a0d98ca04e37ca2e5f
+SHA256: ffebc557ec11060d737b0f6a1fabc2eb721060e91151ddd5bbeb5894f902fd6d
+Section: games
+Priority: optional
+Homepage: https://github.com/asasine/factoriod
+Description: A factorio daemon for Ubuntu
+
+Package: factoriod
+Version: 0.1.5
+Architecture: amd64
+Maintainer: asasine
+Installed-Size: 3493
+Depends: dotnet-runtime-6.0
+Filename: ./factoriod.0.1.5.deb
+Size: 634352
+MD5sum: 66a32b4d41457ef7882bed82401d7dcb
+SHA1: 20985dab192d1ce40aa7114aa4b4605a0e6540a6
+SHA256: e7a74fc25f36b5f934a8f50224fb3d38cc9a16c2876ee2f8323e0bb17e32d7ac
+Section: games
+Priority: optional
+Homepage: https://github.com/asasine/factoriod
+Description: A factorio daemon for Ubuntu
+
+Package: factoriod
+Version: 0.1.6
+Architecture: amd64
+Maintainer: asasine
+Installed-Size: 3493
+Depends: dotnet-runtime-6.0
+Filename: ./factoriod.0.1.6.deb
+Size: 635516
+MD5sum: e61eac81b0306a2eb0f7802a38e1d6a6
+SHA1: 65285a4afe7175dbe7ed13fc9906dab17ac46766
+SHA256: 96373ec592d6eed0592d3486bd81cbe09a9819501289ade65213ca5fc6d909e1
+Section: games
+Priority: optional
+Homepage: https://github.com/asasine/factoriod
+Description: A factorio daemon for Ubuntu
+
+Package: factoriod
+Version: 0.1.7
+Architecture: amd64
+Maintainer: asasine
+Installed-Size: 3493
+Depends: dotnet-runtime-6.0
+Filename: ./factoriod.0.1.7.deb
+Size: 635122
+MD5sum: 68710cf34ce64000d7f146922659584c
+SHA1: 792d3a40dbc3bc30d08231848e4f0c61dec41ada
+SHA256: 9b476e52e7abec456c541c8f46f3b8ff1e84cbb53cce617db5d3ad8ca2924a10
+Section: games
+Priority: optional
+Homepage: https://github.com/asasine/factoriod
+Description: A factorio daemon for Ubuntu
+
