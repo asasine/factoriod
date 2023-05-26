@@ -53,7 +53,7 @@ public class FactorioProcess
         this.logger.LogInformation("Starting factorio process");
 
         var arguments = new List<string>();
-        var savePath = await CreateSaveIfNotExists(factorioDirectory, cancellationToken);
+        var savePath = await SelectOrCreateSave(factorioDirectory, cancellationToken);
         if (savePath == null)
         {
             this.logger.LogWarning("Could not create save file.");
@@ -324,9 +324,22 @@ public class FactorioProcess
         return true;
     }
 
-    private async Task<FileInfo?> CreateSaveIfNotExists(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Selects a save file to use, or creates one if none exist.
+    /// The selected save file is the path specified in
+    /// </summary>
+    /// <param name="factorioDirectory"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    private async Task<FileInfo?> SelectOrCreateSave(DirectoryInfo factorioDirectory, CancellationToken cancellationToken = default)
     {
-        var savePath = this.options.Saves.GetSavePath();
+        var savePath = this.options.Saves.GetCurrentSavePath();
+        if (savePath != null && savePath.Exists)
+        {
+            this.logger.LogDebug("Found save file {path}", savePath);
+            return savePath;
+        }
+
         if (savePath == null)
         {
             var savesRootDirectory = this.options.Saves.GetRootDirectory();
@@ -338,15 +351,10 @@ public class FactorioProcess
             savePath = savesRootDirectory.EnumerateFiles().MaxBy(file => file.LastWriteTimeUtc);
         }
 
-        if (savePath == null)
+        if (savePath != null && savePath.Exists)
         {
-            // no save path specified and no save files found
-            savePath = new FileInfo(Path.Combine(this.options.Saves.GetRootDirectory().FullName, "save1.zip"));
-            this.logger.LogDebug("No save file found, creating {path}", savePath);
-        }
-
-        if (savePath.Exists)
-        {
+            this.logger.LogDebug("Found newest save file {path}", savePath);
+            this.options.Saves.SetCurrentSavePath(savePath);
             return savePath;
         }
 
@@ -354,6 +362,13 @@ public class FactorioProcess
         {
             this.logger.LogDebug("Cancellation requested, not creating save.");
             return null;
+        }
+
+        if (savePath == null)
+        {
+            // no save path specified and no save files found
+            savePath = new FileInfo(Path.Combine(this.options.Saves.GetRootDirectory().FullName, "save1.zip"));
+            this.logger.LogDebug("No save file found, creating {path}", savePath);
         }
 
         this.logger.LogInformation("Creating save file {path}", savePath);
@@ -390,6 +405,7 @@ public class FactorioProcess
         await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
 
         savePath.Refresh();
+        this.options.Saves.SetCurrentSavePath(savePath);
         return savePath;
     }
 
