@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Factoriod.Daemon.Models;
 using Factoriod.Fetcher;
 using Factoriod.Models;
 using Microsoft.Extensions.Options;
+using Mono.Unix.Native;
 
 namespace Factoriod.Daemon;
 
@@ -494,11 +495,14 @@ public sealed class FactorioProcess : IDisposable
         }
         catch (TaskCanceledException)
         {
+            // System.Diagnostics.Process doesn't send SIGTERM to the process when cancelled, so we have to do it ourselves
+            this.logger.LogInformation("Cancellation requested, sending SIGTERM to process {pid}", process.Id);
+            Syscall.kill(process.Id, Signum.SIGTERM);
         }
 
         if (cancellationToken.IsCancellationRequested && !process.HasExited)
         {
-            this.logger.LogDebug("Cancellation requested, waiting 5s before SIGKILL.");
+            this.logger.LogDebug("SIGTERM sent, waiting 5s before SIGKILL.");
             using var sigkillCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             try
             {
@@ -511,7 +515,7 @@ public sealed class FactorioProcess : IDisposable
 
         if (!process.HasExited)
         {
-            this.logger.LogWarning("Process did not exit after cancellation, sending SIGKILL.");
+            this.logger.LogWarning("Process did not exit after SIGTERM, sending SIGKILL.");
             process.Kill();
         }
 
