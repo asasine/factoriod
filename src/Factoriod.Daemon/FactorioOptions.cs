@@ -55,7 +55,7 @@ namespace Factoriod.Daemon.Options
 
         public FileInfo GetServerBanlistPath()
             => new FileInfo(Path.Combine(this.RootDirectory, this.ServerBanlistPath)).Resolve();
-        
+
         public FileInfo GetServerAdminlistPath()
             => new FileInfo(Path.Combine(this.RootDirectory, this.ServerAdminlistPath)).Resolve();
     }
@@ -64,13 +64,50 @@ namespace Factoriod.Daemon.Options
     {
         [Required]
         public string RootDirectory { get; set; } = null!;
-        public string Save { get; set; } = null!;
 
         public DirectoryInfo GetRootDirectory()
             => new DirectoryInfo(this.RootDirectory).Resolve();
 
-        public FileInfo? GetSavePath()
-            => this.Save == null ? null : new FileInfo(Path.Combine(this.RootDirectory, this.Save)).Resolve();
+        private const string CurrentSaveFilename = "current_save";
+
+        public FileInfo? GetCurrentSavePath()
+        {
+            var currentSaveLink = new FileInfo(Path.Combine(GetRootDirectory().FullName, CurrentSaveFilename));
+            if (!currentSaveLink.Exists)
+            {
+                return null;
+            }
+
+            var resolved = currentSaveLink.ResolveLinkTarget(true);
+            if (resolved == null)
+            {
+                return null;
+            }
+
+            if (!resolved.Exists)
+            {
+                return null;
+            }
+
+            var currentSave = new FileInfo(resolved.FullName);
+            if (!currentSave.Exists)
+            {
+                return null;
+            }
+
+            return currentSave;
+        }
+
+        public void SetCurrentSavePath(FileInfo save)
+        {
+            var currentSaveLink = new FileInfo(Path.Combine(GetRootDirectory().FullName, CurrentSaveFilename));
+            if (currentSaveLink.Exists)
+            {
+                currentSaveLink.Delete();
+            }
+
+            currentSaveLink.CreateAsSymbolicLink(save.FullName);
+        }
     }
 
     public sealed class FactorioMapGeneration

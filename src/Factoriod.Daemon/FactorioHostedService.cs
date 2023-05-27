@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
 namespace Factoriod.Daemon
 {
     public class FactorioHostedService : BackgroundService
@@ -25,9 +22,8 @@ namespace Factoriod.Daemon
             }
 
             var exitCode = await this.factorioProcess.StartServerAsync(cancellationToken);
-            
-            // factorio process returns exit code 1 when its shutdown by SIGTERM, consider this a successful code
-            if (!cancellationToken.IsCancellationRequested && !(exitCode == 0 || exitCode == 1))
+
+            if (!cancellationToken.IsCancellationRequested && exitCode != 0)
             {
                 this.logger.LogError("Factorio process exited early with code {exitCode}, shutting down", exitCode);
                 this.lifetime.StopApplication();
