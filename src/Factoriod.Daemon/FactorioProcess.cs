@@ -52,10 +52,10 @@ public sealed class FactorioProcess : IDisposable
         //  if an outdated version exists, update it
         // start the server
         //  if a save doesn't exist, create one
-        using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(serverStoppingToken, this.serverRestartCts.Token);
-        var cancellationToken = cancellationTokenSource.Token;
         while (true)
         {
+            using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(serverStoppingToken, this.serverRestartCts.Token);
+            var cancellationToken = cancellationTokenSource.Token;
             this.ServerStatus.ServerState = ServerState.Launching;
             var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
             if (factorioDirectory == null)
