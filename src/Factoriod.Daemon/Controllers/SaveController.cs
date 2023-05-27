@@ -68,6 +68,7 @@ namespace Factoriod.Daemon.Controllers
             // choose the save which was modified most recently
             return savesRootDirectory
                 .EnumerateFiles()
+                .Where(file => file.LinkTarget is null)
                 .OrderByDescending(file => file.LastWriteTimeUtc)
                 .Select(file => new Save(file.FullName));
         }
