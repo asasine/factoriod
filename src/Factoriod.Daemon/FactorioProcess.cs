@@ -98,7 +98,7 @@ public sealed class FactorioProcess : IDisposable
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = Path.Combine(factorioDirectory.FullName, this.options.Executable.ExecutableDirectory, this.options.Executable.ExecutableName),
-                    Arguments = string.Join(" ", arguments),
+                    Arguments = string.Join(' ', arguments),
                     WorkingDirectory = factorioDirectory.FullName,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -336,7 +336,7 @@ public sealed class FactorioProcess : IDisposable
             StartInfo = new ProcessStartInfo
             {
                 FileName = this.options.Executable.GetExecutablePath(versionOnDisk.Path).FullName,
-                Arguments = string.Join(" ", arguments),
+                Arguments = string.Join(' ', arguments),
                 WorkingDirectory = versionOnDisk.Path.FullName,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -426,7 +426,7 @@ public sealed class FactorioProcess : IDisposable
             StartInfo = new ProcessStartInfo
             {
                 FileName = this.options.Executable.GetExecutablePath(factorioDirectory).FullName,
-                Arguments = string.Join(" ", arguments),
+                Arguments = string.Join(' ', arguments),
                 WorkingDirectory = factorioDirectory.FullName,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -488,7 +488,14 @@ public sealed class FactorioProcess : IDisposable
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        await process.WaitForExitAsync(cancellationToken);
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (TaskCanceledException)
+        {
+            this.logger.LogInformation("Process was cancelled");
+        }
 
         process.CancelOutputRead();
         process.CancelErrorRead();
