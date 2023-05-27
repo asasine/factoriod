@@ -494,7 +494,25 @@ public sealed class FactorioProcess : IDisposable
         }
         catch (TaskCanceledException)
         {
-            this.logger.LogInformation("Process was cancelled");
+        }
+
+        if (cancellationToken.IsCancellationRequested && !process.HasExited)
+        {
+            this.logger.LogDebug("Cancellation requested, waiting 5s before SIGKILL.");
+            using var sigkillCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            try
+            {
+                await process.WaitForExitAsync(sigkillCts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        }
+
+        if (!process.HasExited)
+        {
+            this.logger.LogWarning("Process did not exit after cancellation, sending SIGKILL.");
+            process.Kill();
         }
 
         process.CancelOutputRead();
