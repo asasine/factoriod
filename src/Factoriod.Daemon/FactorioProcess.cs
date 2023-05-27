@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Factoriod.Daemon.Models;
@@ -62,7 +62,7 @@ public sealed class FactorioProcess : IDisposable
             if (factorioDirectory == null)
             {
                 this.logger.LogWarning("Unable to find Factorio directory");
-                return 2;
+                return 1;
             }
 
             this.logger.LogInformation("Starting factorio process");
@@ -72,14 +72,14 @@ public sealed class FactorioProcess : IDisposable
             if (savePath == null)
             {
                 this.logger.LogWarning("Could not create save file.");
-                return 2;
+                return 1;
             }
 
             var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", savePath);
             if (!addedStartServer)
             {
                 this.logger.LogError("Unable to find save file {path}", savePath);
-                return 2;
+                return 1;
             }
 
             this.logger.LogInformation("Using save {name} (path: {file})", savePath.Name, savePath);
@@ -118,7 +118,7 @@ public sealed class FactorioProcess : IDisposable
                 this.ServerStatus.SetFaulted(incompatibleMapVersionError);
                 this.logger.LogError("Could not run factorio", incompatibleMapVersionError);
 
-                return 2;
+                return 1;
             }
             else
             {
@@ -132,8 +132,14 @@ public sealed class FactorioProcess : IDisposable
                 oldCts.Dispose();
             }
 
-            if (serverStoppingToken.IsCancellationRequested || factorioProcess.HasExited)
+            if (serverStoppingToken.IsCancellationRequested)
             {
+                if (!factorioProcess.HasExited)
+                {
+                    this.logger.LogError("Server stopping requested, but factorio process has not exited.");
+                    return 1;
+                }
+
                 // factorio process returns exit code 1 when its shutdown, consider this a successful code
                 if (factorioProcess.ExitCode == 1)
                 {
