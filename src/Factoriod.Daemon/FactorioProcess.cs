@@ -135,6 +135,7 @@ public sealed class FactorioProcess : IDisposable
 
             if (serverStoppingToken.IsCancellationRequested)
             {
+                this.logger.LogInformation("Server stopping.");
                 if (!factorioProcess.HasExited)
                 {
                     this.logger.LogError("Server stopping requested, but factorio process has not exited.");
@@ -495,31 +496,38 @@ public sealed class FactorioProcess : IDisposable
 
         try
         {
+            // NOTE: when cancellationToken is signaled, the process receives SIGTERM
             await process.WaitForExitAsync(cancellationToken);
         }
         catch (TaskCanceledException)
         {
-            // System.Diagnostics.Process doesn't send SIGTERM to the process when cancelled, so we have to do it ourselves
-            this.logger.LogInformation("Cancellation requested, sending SIGTERM to process {pid}", process.Id);
-            Syscall.kill(process.Id, Signum.SIGTERM);
         }
 
-        if (cancellationToken.IsCancellationRequested && !process.HasExited)
+        async Task waitForExitWithSignalEscalation(Signum signum, string format, params object?[] args)
         {
-            this.logger.LogDebug("SIGTERM sent, waiting 5s before SIGKILL.");
-            using var sigkillCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            try
+            if (cancellationToken.IsCancellationRequested && !process.HasExited)
             {
-                await process.WaitForExitAsync(sigkillCts.Token);
-            }
-            catch (TaskCanceledException)
-            {
+                this.logger.LogDebug(format, args);
+                using var sigintCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                try
+                {
+                    await process.WaitForExitAsync(sigintCts.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    Syscall.kill(process.Id, Signum.SIGINT);
+                }
             }
         }
+
+        // System.Diagnostics.Process cancellation sometimes doesn't send signals to the underlying process when the cancellationToken is cancelled, so we have to do it ourselves
+        await waitForExitWithSignalEscalation(Signum.SIGINT, "Cancellation requested, waiting 5s for process {pid} to exit before sending SIGINT (sometimes required for restarts and shutdowns)", process.Id);
+        await waitForExitWithSignalEscalation(Signum.SIGTERM, "SIGINT sent, waiting 5s for process {pid} to exit before escalating to SIGTERM", process.Id);
+        await waitForExitWithSignalEscalation(Signum.SIGKILL, "SIGTERM sent, waiting 5s for process {pid} to exit before escalating to SIGKILL.", process.Id);
 
         if (!process.HasExited)
         {
-            this.logger.LogWarning("Process did not exit after SIGTERM, sending SIGKILL.");
+            this.logger.LogWarning("Process did not exit after SIGKILL, immediately stopping it.");
             process.Kill();
         }
 
