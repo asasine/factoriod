@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Factoriod.Daemon.Models;
 using Factoriod.Fetcher;
 using Factoriod.Models;
+using Factoriod.Utilities;
 using Microsoft.Extensions.Options;
 using Mono.Unix.Native;
 
@@ -383,13 +384,10 @@ public sealed class FactorioProcess : IDisposable
 
         if (savePath == null)
         {
-            var savesRootDirectory = this.options.Saves.GetRootDirectory();
-
-            // ensure it's created, otherwise a DirectoryNotFoundException is thrown
-            savesRootDirectory.Create();
-
             // choose the save which was modified most recently
-            savePath = savesRootDirectory.EnumerateFiles().MaxBy(file => file.LastWriteTimeUtc);
+            savePath = this.options.Saves.ListSaves()
+                .AsNullable()
+                .FirstOrDefault()?.GetFileInfo();
         }
 
         if (savePath != null && savePath.Exists)

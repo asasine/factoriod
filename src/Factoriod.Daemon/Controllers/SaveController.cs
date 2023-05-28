@@ -22,7 +22,7 @@ namespace Factoriod.Daemon.Controllers
 
         [HttpGet(Name = "ListSaves")]
         public IEnumerable<Save> List([FromQuery] bool backups = false)
-            => ListAllSaves()
+            => this.options.Saves.ListSaves()
                 .Where(save => save.IsBackup == backups);
 
 
@@ -54,23 +54,6 @@ namespace Factoriod.Daemon.Controllers
             var save = new Save(file);
             this.factorioProcess.SetSave(save);
             return AcceptedAtRoute("GetServerStatus");
-        }
-
-        private IEnumerable<Save> ListAllSaves()
-        {
-            var savesRootDirectory = this.options.Saves.GetRootDirectory();
-
-            this.logger.LogDebug("Scanning {path} for saves", savesRootDirectory);
-
-            // ensure it's created, otherwise a DirectoryNotFoundException is thrown
-            savesRootDirectory.Create();
-
-            // choose the save which was modified most recently
-            return savesRootDirectory
-                .EnumerateFiles()
-                .Where(file => file.LinkTarget is null)
-                .OrderByDescending(file => file.LastWriteTimeUtc)
-                .Select(file => new Save(file.FullName));
         }
     }
 }

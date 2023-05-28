@@ -19,5 +19,7 @@ public readonly record struct Save(string Path)
 
     public bool IsBackup => Path.EndsWith(".bak");
 
+    public FileInfo GetFileInfo() => new(Path);
+
     private static string GetSaveName(string file) => System.IO.Path.GetFileNameWithoutExtension(file);
 }

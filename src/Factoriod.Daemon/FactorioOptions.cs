@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Factoriod.Models;
 using Factoriod.Utilities;
 
 namespace Factoriod.Daemon.Options
@@ -107,6 +108,20 @@ namespace Factoriod.Daemon.Options
             }
 
             currentSaveLink.CreateAsSymbolicLink(save.FullName);
+        }
+
+        /// <summary>
+        /// List all saves in the saves directory, ordered by last write time descending.
+        /// </summary>
+        /// <returns>All saves in the saves directory, ordered by last write time descending.</returns>
+        public IEnumerable<Save> ListSaves()
+        {
+            var savesRootDirectory = GetRootDirectory();
+            savesRootDirectory.Create();
+            return savesRootDirectory
+                .EnumerateFiles("*.zip")
+                .OrderByDescending(file => file.LastWriteTimeUtc)
+                .Select(file => new Save(file.FullName));
         }
     }
 
