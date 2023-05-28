@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Factoriod.Fetcher;
+using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon
 {
@@ -13,8 +14,11 @@ namespace Factoriod.Daemon
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicies.SnakeCaseLower;
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
                     options.JsonSerializerOptions.WriteIndented = true;
+                    options.JsonSerializerOptions.AllowTrailingCommas = true;
+                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
                 });
 
             builder.Services.AddEndpointsApiExplorer();

@@ -1,4 +1,5 @@
 ﻿using Factoriod.Models;
+using Factoriod.Models.Game;
 using Factoriod.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -48,11 +49,20 @@ namespace Factoriod.Daemon.Controllers
             this.logger.LogDebug("Attempting to set save to {path} for a save named {save}", file, name);
             if (!System.IO.File.Exists(file))
             {
+                this.logger.LogDebug("Save {save} not found", name);
                 return NotFound();
             }
 
             var save = new Save(file);
             this.factorioProcess.SetSave(save);
+            return AcceptedAtRoute("GetServerStatus");
+        }
+
+        [HttpPut("create/{name}", Name = "CreateSave")]
+        public ActionResult<MapExchangeStringData> CreateSave(string name, [FromBody] MapExchangeStringData mapExchangeStringData)
+        {
+            this.logger.LogDebug("Attempting to create save named {save} with map exchange string data {mapExchangeStringData}", name, mapExchangeStringData);
+            return Ok(mapExchangeStringData);
             return AcceptedAtRoute("GetServerStatus");
         }
     }
