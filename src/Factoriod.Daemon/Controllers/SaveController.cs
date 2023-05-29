@@ -59,11 +59,11 @@ namespace Factoriod.Daemon.Controllers
         }
 
         [HttpPut("create/{name}", Name = "CreateSave")]
-        public async Task<ActionResult<MapExchangeStringData>> CreateSave(string name, [FromBody] MapExchangeStringData mapExchangeStringData)
+        public async Task<ActionResult<MapExchangeStringData>> CreateSave(string name, [FromBody] MapExchangeStringData mapExchangeStringData, [FromQuery] bool overwrite = false)
         {
             this.logger.LogDebug("Attempting to create save named {save}", name);
             // TODO: Validate mapExchangeStringData
-            var success = await this.factorioProcess.CreateSaveAsync(name, mapExchangeStringData);
+            var success = await this.factorioProcess.CreateSaveAsync(name, mapExchangeStringData, overwrite: overwrite);
             if (!success)
             {
                 return BadRequest();

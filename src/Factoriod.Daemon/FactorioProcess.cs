@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -188,14 +188,19 @@ public sealed class FactorioProcess : IDisposable
         this.serverRestartCts.Cancel();
     }
 
-    public async Task<bool> CreateSaveAsync(string name, MapExchangeStringData mapExchangeStringData, CancellationToken cancellationToken = default)
+    public async Task<bool> CreateSaveAsync(string name, MapExchangeStringData mapExchangeStringData, bool overwrite = false, CancellationToken cancellationToken = default)
     {
         this.logger.LogDebug("Creating new save {name}", name);
         var savePath = this.options.Saves.GetSavePath(name);
         if (savePath.Exists)
         {
-            this.logger.LogWarning("Save file {path} already exists", savePath.FullName);
-            return exit(false);
+            if (!overwrite)
+            {
+                this.logger.LogWarning("Save file {path} already exists, not overwriting", savePath.FullName);
+                return exit(false);
+            }
+
+            this.logger.LogInformation("Save file {path} already exists, overwriting", savePath.FullName);
         }
 
         this.serverWait.Reset();
