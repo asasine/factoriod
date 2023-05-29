@@ -33,6 +33,7 @@ public sealed class FactorioProcess : IDisposable
     /// </summary>
     private CancellationTokenSource serverRestartCts = new();
     private readonly ManualResetEventSlim serverWait = new(true);
+    private Task? factorioProcess = null;
 
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
@@ -119,7 +120,9 @@ public sealed class FactorioProcess : IDisposable
             };
 
             this.ServerStatus.SetRunning(new Save(savePath.FullName));
-            await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
+            var previousFactorioProcess = Interlocked.Exchange(ref this.factorioProcess, StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken));
+            previousFactorioProcess?.Dispose();
+            await this.factorioProcess;
             this.ServerStatus.ServerState = ServerState.Exited;
 
             if (incompatibleMapVersionError != null)
