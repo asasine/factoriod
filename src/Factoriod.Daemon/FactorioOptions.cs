@@ -9,7 +9,6 @@ namespace Factoriod.Daemon.Options
         public FactorioExecutable Executable { get; set; } = null!;
         public FactorioConfiguration Configuration { get; set; } = null!;
         public FactorioSaves Saves { get; set; } = null!;
-        public FactorioMapGeneration MapGeneration { get; set; } = null!;
         public string ModsRootDirectory { get; set; } = null!;
 
         public DirectoryInfo GetModsRootDirectory()
@@ -126,19 +125,5 @@ namespace Factoriod.Daemon.Options
                 .OrderByDescending(file => file.LastWriteTimeUtc)
                 .Select(file => new Save(file.FullName));
         }
-    }
-
-    public sealed class FactorioMapGeneration
-    {
-        [Required]
-        public string RootDirectory { get; set; } = null!;
-        public string MapGenSettingsPath { get; set; } = null!;
-        public string MapSettingsPath { get; set; } = null!;
-
-        public FileInfo GetMapGenSettingsPath()
-            => new FileInfo(Path.Combine(this.RootDirectory, this.MapGenSettingsPath)).Resolve();
-
-        public FileInfo GetMapSettingsPath()
-            => new FileInfo(Path.Combine(this.RootDirectory, this.MapSettingsPath)).Resolve();
     }
 }

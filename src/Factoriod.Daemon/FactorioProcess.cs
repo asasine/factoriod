@@ -516,8 +516,8 @@ public sealed class FactorioProcess : IDisposable
             savePath.FullName,
         };
 
-        AddArgumentIfFileExists(arguments, "--map-gen-settings", mapGenSettingsPath ?? this.options.MapGeneration.GetMapGenSettingsPath());
-        AddArgumentIfFileExists(arguments, "--map-settings", mapSettingsPath ?? this.options.MapGeneration.GetMapSettingsPath());
+        AddArgumentIfFileExists(arguments, "--map-gen-settings", mapGenSettingsPath);
+        AddArgumentIfFileExists(arguments, "--map-settings", mapSettingsPath);
         if (seed.HasValue)
         {
             arguments.Add("--map-gen-seed");
@@ -676,28 +676,28 @@ public sealed class FactorioProcess : IDisposable
         AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.GetModsRootDirectory());
     }
 
-    private static bool AddArgumentIfFileExists(List<string> arguments, string option, FileInfo path)
+    private static bool AddArgumentIfFileExists(List<string> arguments, string option, FileInfo? path)
     {
-        if (path.Exists)
+        if (path is null || !path.Exists)
         {
-            arguments.Add(option);
-            arguments.Add(path.FullName);
-            return true;
+            return false;
         }
 
-        return false;
+        arguments.Add(option);
+        arguments.Add(path.FullName);
+        return true;
     }
 
-    private static bool AddArgumentIfDirectoryExists(List<string> arguments, string option, DirectoryInfo path)
+    private static bool AddArgumentIfDirectoryExists(List<string> arguments, string option, DirectoryInfo? path)
     {
-        if (path.Exists)
+        if (path is null || !path.Exists)
         {
-            arguments.Add(option);
-            arguments.Add(path.FullName);
-            return true;
+            return false;
         }
 
-        return false;
+        arguments.Add(option);
+        arguments.Add(path.FullName);
+        return true;
     }
 
     private void OnFactorioProcessOutputDataReceived(object sender, DataReceivedEventArgs e)

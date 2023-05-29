@@ -41,5 +41,5 @@ This can be adjusted by modifying the [src/Factoriod.Daemon/appsettings.json](sr
 
 #### Directories in use
 - /var/cache/factoriod/: downloaded game binaries
-- /var/lib/factoriod/: save games
-- /etc/factoriod/: configuration files (map settings, server settings, etc.)
+- /var/lib/factoriod/: dynamic files including save games and generated configuration
+- /etc/factoriod/: static configuration files

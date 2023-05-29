@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Factoriod.Fetcher;
 using Yoh.Text.Json.NamingPolicies;
@@ -55,10 +55,7 @@ namespace Factoriod.Daemon
                         RootDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY")!,
                     };
 
-                    options.MapGeneration = new Options.FactorioMapGeneration
-                    {
-                        RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
-                    };
+                    options.ModsRootDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY")!;
                 })
                 .BindConfiguration("Factorio")
                 .ValidateDataAnnotations();
