@@ -1,4 +1,5 @@
 ﻿using Factoriod.Models;
+using Factoriod.Models.Game;
 using Factoriod.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -22,7 +23,7 @@ namespace Factoriod.Daemon.Controllers
 
         [HttpGet(Name = "ListSaves")]
         public IEnumerable<Save> List([FromQuery] bool backups = false)
-            => ListAllSaves()
+            => this.options.Saves.ListSaves()
                 .Where(save => save.IsBackup == backups);
 
 
@@ -48,6 +49,7 @@ namespace Factoriod.Daemon.Controllers
             this.logger.LogDebug("Attempting to set save to {path} for a save named {save}", file, name);
             if (!System.IO.File.Exists(file))
             {
+                this.logger.LogDebug("Save {save} not found", name);
                 return NotFound();
             }
 
@@ -56,21 +58,17 @@ namespace Factoriod.Daemon.Controllers
             return AcceptedAtRoute("GetServerStatus");
         }
 
-        private IEnumerable<Save> ListAllSaves()
+        [HttpPut("create/{name}", Name = "CreateSave")]
+        public async Task<ActionResult<MapExchangeStringData>> CreateSave(string name, [FromBody] MapExchangeStringData mapExchangeStringData, [FromQuery] bool overwrite = false)
         {
-            var savesRootDirectory = this.options.Saves.GetRootDirectory();
+            this.logger.LogDebug("Attempting to create save named {save}", name);
+            var success = await this.factorioProcess.CreateSaveAsync(name, mapExchangeStringData, overwrite: overwrite);
+            if (!success)
+            {
+                return BadRequest();
+            }
 
-            this.logger.LogDebug("Scanning {path} for saves", savesRootDirectory);
-
-            // ensure it's created, otherwise a DirectoryNotFoundException is thrown
-            savesRootDirectory.Create();
-
-            // choose the save which was modified most recently
-            return savesRootDirectory
-                .EnumerateFiles()
-                .Where(file => file.LinkTarget is null)
-                .OrderByDescending(file => file.LastWriteTimeUtc)
-                .Select(file => new Save(file.FullName));
+            return AcceptedAtRoute("GetServerStatus", null, mapExchangeStringData);
         }
     }
 }

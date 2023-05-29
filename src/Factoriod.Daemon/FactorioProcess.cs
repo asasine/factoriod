@@ -1,11 +1,17 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Factoriod.Daemon.Models;
 using Factoriod.Fetcher;
 using Factoriod.Models;
+using Factoriod.Models.Game;
+using Factoriod.Utilities;
 using Microsoft.Extensions.Options;
+using Mono.Unix;
 using Mono.Unix.Native;
+using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon;
 
@@ -31,6 +37,8 @@ public sealed class FactorioProcess : IDisposable
     /// A cancellation token source that can be cancelled to restart the factorio process.
     /// </summary>
     private CancellationTokenSource serverRestartCts = new();
+    private readonly ManualResetEventSlim serverWait = new(true);
+    private Task? factorioProcess = null;
 
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
@@ -55,6 +63,13 @@ public sealed class FactorioProcess : IDisposable
         //  if a save doesn't exist, create one
         while (true)
         {
+            serverWait.Wait(serverStoppingToken);
+            if (serverStoppingToken.IsCancellationRequested)
+            {
+                this.logger.LogInformation("Server stopping.");
+                return 0;
+            }
+
             using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(serverStoppingToken, this.serverRestartCts.Token);
             var cancellationToken = cancellationTokenSource.Token;
             this.ServerStatus.ServerState = ServerState.Launching;
@@ -110,7 +125,9 @@ public sealed class FactorioProcess : IDisposable
             };
 
             this.ServerStatus.SetRunning(new Save(savePath.FullName));
-            await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
+            var previousFactorioProcess = Interlocked.Exchange(ref this.factorioProcess, StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken));
+            previousFactorioProcess?.Dispose();
+            await this.factorioProcess;
             this.ServerStatus.ServerState = ServerState.Exited;
 
             if (incompatibleMapVersionError != null)
@@ -134,6 +151,7 @@ public sealed class FactorioProcess : IDisposable
 
             if (serverStoppingToken.IsCancellationRequested)
             {
+                this.logger.LogInformation("Server stopping.");
                 if (!factorioProcess.HasExited)
                 {
                     this.logger.LogError("Server stopping requested, but factorio process has not exited.");
@@ -168,6 +186,76 @@ public sealed class FactorioProcess : IDisposable
         this.logger.LogInformation("Setting current save to {save}", save);
         this.options.Saves.SetCurrentSavePath(new FileInfo(save.Path));
         this.serverRestartCts.Cancel();
+    }
+
+    public async Task<bool> CreateSaveAsync(string name, MapExchangeStringData mapExchangeStringData, bool overwrite = false, CancellationToken cancellationToken = default)
+    {
+        this.logger.LogDebug("Creating new save {name}", name);
+        var savePath = this.options.Saves.GetSavePath(name);
+        if (savePath.Exists)
+        {
+            if (!overwrite)
+            {
+                this.logger.LogWarning("Save file {path} already exists, not overwriting", savePath.FullName);
+                return exit(false);
+            }
+
+            this.logger.LogInformation("Save file {path} already exists, overwriting", savePath.FullName);
+        }
+
+        this.serverWait.Reset();
+        this.serverRestartCts.Cancel();
+        this.logger.LogDebug("Waiting for factorio process to exit");
+        await (this.factorioProcess ?? Task.CompletedTask);
+
+        var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
+        if (factorioDirectory == null)
+        {
+            this.logger.LogWarning("Unable to find Factorio directory");
+            return exit(false);
+        }
+
+        this.logger.LogDebug($"Writing map-settings.json and map-gen-settings.json");
+
+        var mapSettingsPath = Path.GetTempFileName();
+        var mapGenSettingsPath = Path.GetTempFileName();
+
+        var jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            DictionaryKeyPolicy = JsonNamingPolicies.KebabCaseLower,
+            PropertyNamingPolicy = JsonNamingPolicies.SnakeCaseLower,
+            NumberHandling = JsonNumberHandling.Strict,
+        };
+
+        using var mapSettingsStream = File.OpenWrite(mapSettingsPath);
+        await JsonSerializer.SerializeAsync(mapSettingsStream, mapExchangeStringData.MapSettings, jsonOptions, cancellationToken);
+        mapSettingsStream.WriteByte((byte)'\n');
+        this.logger.LogDebug("Wrote map-settings.json to {path}", mapSettingsPath);
+
+        using var mapGenSettingsStream = File.OpenWrite(mapGenSettingsPath);
+        await JsonSerializer.SerializeAsync(mapGenSettingsStream, mapExchangeStringData.MapGenSettings, jsonOptions, cancellationToken);
+        mapGenSettingsStream.WriteByte((byte)'\n');
+        this.logger.LogDebug("Wrote map-gen-settings.json to {path}", mapGenSettingsPath);
+
+        await Task.WhenAll(mapSettingsStream.FlushAsync(cancellationToken), mapGenSettingsStream.FlushAsync(cancellationToken));
+
+        savePath = await CreateSaveAsync(factorioDirectory, savePath, new FileInfo(mapGenSettingsPath), new FileInfo(mapSettingsPath), mapExchangeStringData.MapGenSettings.Seed, cancellationToken);
+        if (savePath == null)
+        {
+            this.logger.LogWarning("Failed to create save file");
+            return exit(false);
+        }
+
+        this.options.Saves.SetCurrentSavePath(savePath);
+        this.logger.LogDebug("Created save file {path}", savePath.FullName);
+        return exit(true);
+
+        bool exit(bool success)
+        {
+            this.serverWait.Set();
+            return success;
+        }
     }
 
     /// <summary>
@@ -383,13 +471,10 @@ public sealed class FactorioProcess : IDisposable
 
         if (savePath == null)
         {
-            var savesRootDirectory = this.options.Saves.GetRootDirectory();
-
-            // ensure it's created, otherwise a DirectoryNotFoundException is thrown
-            savesRootDirectory.Create();
-
             // choose the save which was modified most recently
-            savePath = savesRootDirectory.EnumerateFiles().MaxBy(file => file.LastWriteTimeUtc);
+            savePath = this.options.Saves.ListSaves()
+                .AsNullable()
+                .FirstOrDefault()?.GetFileInfo();
         }
 
         if (savePath != null && savePath.Exists)
@@ -412,6 +497,17 @@ public sealed class FactorioProcess : IDisposable
             this.logger.LogDebug("No save file found, creating {path}", savePath);
         }
 
+        return await CreateSaveAsync(factorioDirectory, savePath, cancellationToken: cancellationToken);
+    }
+
+    private async Task<FileInfo?> CreateSaveAsync(
+        DirectoryInfo factorioDirectory,
+        FileInfo savePath,
+        FileInfo? mapGenSettingsPath = null,
+        FileInfo? mapSettingsPath = null,
+        uint? seed = null,
+        CancellationToken cancellationToken = default)
+    {
         this.logger.LogInformation("Creating save file {path}", savePath);
 
         var arguments = new List<string>()
@@ -420,12 +516,12 @@ public sealed class FactorioProcess : IDisposable
             savePath.FullName,
         };
 
-        AddArgumentIfFileExists(arguments, "--map-gen-settings", this.options.MapGeneration.GetMapGenSettingsPath());
-        AddArgumentIfFileExists(arguments, "--map-settings", this.options.MapGeneration.GetMapSettingsPath());
-        if (this.options.MapGeneration.MapGenSeed.HasValue)
+        AddArgumentIfFileExists(arguments, "--map-gen-settings", mapGenSettingsPath ?? this.options.MapGeneration.GetMapGenSettingsPath());
+        AddArgumentIfFileExists(arguments, "--map-settings", mapSettingsPath ?? this.options.MapGeneration.GetMapSettingsPath());
+        if (seed.HasValue)
         {
             arguments.Add("--map-gen-seed");
-            arguments.Add(this.options.MapGeneration.MapGenSeed.Value.ToString());
+            arguments.Add(seed.Value.ToString());
         }
 
         using var createSaveProcess = new Process
@@ -443,7 +539,12 @@ public sealed class FactorioProcess : IDisposable
             },
         };
 
-        await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
+        var exitCode = await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
+        if (exitCode != 0)
+        {
+            this.logger.LogError("Failed to create save file {path}", savePath);
+            return null;
+        }
 
         savePath.Refresh();
         this.options.Saves.SetCurrentSavePath(savePath);
@@ -480,11 +581,11 @@ public sealed class FactorioProcess : IDisposable
         return file.CopyTo(backupPath.FullName, true);
     }
 
-    private async Task StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
+    private async Task<int> StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
     {
         if (cancellationToken.IsCancellationRequested)
         {
-            return;
+            return -1;
         }
 
         process.OutputDataReceived += this.OnFactorioProcessOutputDataReceived;
@@ -497,36 +598,45 @@ public sealed class FactorioProcess : IDisposable
 
         try
         {
+            // NOTE: when cancellationToken is signaled, the process receives SIGTERM
             await process.WaitForExitAsync(cancellationToken);
         }
         catch (TaskCanceledException)
         {
-            // System.Diagnostics.Process doesn't send SIGTERM to the process when cancelled, so we have to do it ourselves
-            this.logger.LogInformation("Cancellation requested, sending SIGTERM to process {pid}", process.Id);
-            Syscall.kill(process.Id, Signum.SIGTERM);
         }
 
-        if (cancellationToken.IsCancellationRequested && !process.HasExited)
+        async Task waitForExitWithSignalEscalation(Signum signum, string format, params object?[] args)
         {
-            this.logger.LogDebug("SIGTERM sent, waiting 5s before SIGKILL.");
-            using var sigkillCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            try
+            if (cancellationToken.IsCancellationRequested && !process.HasExited)
             {
-                await process.WaitForExitAsync(sigkillCts.Token);
-            }
-            catch (TaskCanceledException)
-            {
+                this.logger.LogDebug(format, args);
+                using var sigintCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                try
+                {
+                    await process.WaitForExitAsync(sigintCts.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    Syscall.kill(process.Id, Signum.SIGINT);
+                }
             }
         }
+
+        // System.Diagnostics.Process cancellation sometimes doesn't send signals to the underlying process when the cancellationToken is cancelled, so we have to do it ourselves
+        await waitForExitWithSignalEscalation(Signum.SIGINT, "Cancellation requested, waiting 5s for process {pid} to exit before sending SIGINT (sometimes required for restarts and shutdowns)", process.Id);
+        await waitForExitWithSignalEscalation(Signum.SIGTERM, "SIGINT sent, waiting 5s for process {pid} to exit before escalating to SIGTERM", process.Id);
+        await waitForExitWithSignalEscalation(Signum.SIGKILL, "SIGTERM sent, waiting 5s for process {pid} to exit before escalating to SIGKILL.", process.Id);
 
         if (!process.HasExited)
         {
-            this.logger.LogWarning("Process did not exit after SIGTERM, sending SIGKILL.");
+            this.logger.LogWarning("Process did not exit after SIGKILL, immediately stopping it.");
             process.Kill();
         }
 
         process.CancelOutputRead();
         process.CancelErrorRead();
+
+        return process.ExitCode;
     }
 
     private void AddServerSettingsArguments(List<string> arguments)

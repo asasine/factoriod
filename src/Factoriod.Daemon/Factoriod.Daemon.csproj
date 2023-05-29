@@ -60,6 +60,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="6.0.0" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
 	<PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+	<PackageReference Include="Yoh.Text.Json.NamingPolicies" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

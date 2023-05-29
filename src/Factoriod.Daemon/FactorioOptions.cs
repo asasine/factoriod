@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Factoriod.Models;
 using Factoriod.Utilities;
 
 namespace Factoriod.Daemon.Options
@@ -108,6 +109,23 @@ namespace Factoriod.Daemon.Options
 
             currentSaveLink.CreateAsSymbolicLink(save.FullName);
         }
+
+        public FileInfo GetSavePath(string name)
+            => new(Path.Combine(GetRootDirectory().FullName, $"{name}.zip"));
+
+        /// <summary>
+        /// List all saves in the saves directory, ordered by last write time descending.
+        /// </summary>
+        /// <returns>All saves in the saves directory, ordered by last write time descending.</returns>
+        public IEnumerable<Save> ListSaves()
+        {
+            var savesRootDirectory = GetRootDirectory();
+            savesRootDirectory.Create();
+            return savesRootDirectory
+                .EnumerateFiles("*.zip")
+                .OrderByDescending(file => file.LastWriteTimeUtc)
+                .Select(file => new Save(file.FullName));
+        }
     }
 
     public sealed class FactorioMapGeneration
@@ -115,7 +133,6 @@ namespace Factoriod.Daemon.Options
         [Required]
         public string RootDirectory { get; set; } = null!;
         public string MapGenSettingsPath { get; set; } = null!;
-        public int? MapGenSeed { get; set; }
         public string MapSettingsPath { get; set; } = null!;
 
         public FileInfo GetMapGenSettingsPath()
