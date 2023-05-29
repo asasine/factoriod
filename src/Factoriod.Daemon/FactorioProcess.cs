@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Factoriod.Daemon.Models;
@@ -442,7 +442,12 @@ public sealed class FactorioProcess : IDisposable
             },
         };
 
-        await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
+        var exitCode = await StartProcessWithOutputHandlersAndWaitForExitAsync(createSaveProcess, cancellationToken);
+        if (exitCode != 0)
+        {
+            this.logger.LogError("Failed to create save file {path}", savePath);
+            return null;
+        }
 
         savePath.Refresh();
         this.options.Saves.SetCurrentSavePath(savePath);
@@ -479,11 +484,11 @@ public sealed class FactorioProcess : IDisposable
         return file.CopyTo(backupPath.FullName, true);
     }
 
-    private async Task StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
+    private async Task<int> StartProcessWithOutputHandlersAndWaitForExitAsync(Process process, CancellationToken cancellationToken = default)
     {
         if (cancellationToken.IsCancellationRequested)
         {
-            return;
+            return -1;
         }
 
         process.OutputDataReceived += this.OnFactorioProcessOutputDataReceived;
@@ -533,6 +538,8 @@ public sealed class FactorioProcess : IDisposable
 
         process.CancelOutputRead();
         process.CancelErrorRead();
+
+        return process.ExitCode;
     }
 
     private void AddServerSettingsArguments(List<string> arguments)

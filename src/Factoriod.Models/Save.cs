@@ -12,6 +12,10 @@
 /// </param>
 public readonly record struct Save(string Path)
 {
+    public Save(FileInfo file)
+        : this(file.FullName)
+    {
+    }
 
     private readonly Lazy<string> name = new(() => GetSaveName(Path));
     public string Name => name.Value;
