@@ -44,17 +44,17 @@ namespace Factoriod.Daemon
                 {
                     options.Executable = new Options.FactorioExecutable
                     {
-                        DownloadDirectory = cacheDirectory ?? string.Empty,
+                        RootDirectory = cacheDirectory ?? string.Empty,
                     };
 
                     options.Configuration = new Options.FactorioConfiguration
                     {
-                        RootDirectory = configurationDirectory ?? string.Empty,
+                        RootDirectory = Path.Combine(stateDirectory ?? string.Empty, "config", "factorio"),
                     };
 
                     options.Saves = new Options.FactorioSaves
                     {
-                        RootDirectory = stateDirectory ?? string.Empty,
+                        RootDirectory = Path.Combine(stateDirectory ?? string.Empty, "saves"),
                     };
 
                     options.ModsRootDirectory = Path.Combine(cacheDirectory ?? string.Empty, "mods");

@@ -322,7 +322,7 @@ public sealed class FactorioProcess : IDisposable
             var downloadedDirectory = await this.releaseFetcher.DownloadToAsync(
                 new FactorioVersion(requestedVersion, ReleaseBuild.Headless, !this.options.Executable.UseExperimental),
                 Distro.Linux64,
-                this.options.Executable.GetDownloadDirectory(),
+                this.options.Executable.GetRootDirectory(),
                 cancellationToken);
 
             if (downloadedDirectory == null)

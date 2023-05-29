@@ -30,28 +30,18 @@ A factorio daemon for Ubuntu
     ```
 
 ## Configuration
-The daemon reads and stores configuration in _/etc/factoriod/_ directory by default. Some notable files:
-- _appsettings.json_: configuration for the daemon
-- Server settings
-    - _server-settings.json_: configuration for the server
+The daemon reads static configuration from the _/etc/factoriod/_ directory by default. Modifying _/etc/factoriod/appsettings.json_ will adjust the daemon's behavior at runtime.
+
+Dynamic configuration, accessible through the REST API, is stored in _/var/lib/factoriod/config/_. Some notable files:
+- Server settings, in _./factorio_:
+    - _server-settings.json_: configuration for the factorio server
     - _server-whitelist.json_: a list of allowed players for the server
     - _server-banlist.json_: a list of banned players for the server
     - _server-adminlist.json_: a list of admins for the server
 
-If a configuration file is not found, the daemon will use the default configuration. Custom configurations can be created by copying an example configuration file to _/etc/factoriod/_, modifying it, and restarting the daemon.
-
-```bash
-# copy the example to the configuration directory
-sudo -u factorio cp /var/cache/factoriod/factorio/data/server-settings.example.json /etc/factoriod/server-settings.json
-
-# edit it
-vim /etc/factoriod/server-settings.json
-
-# then restart the daemon
-sudo systemctl restart factoriod
-```
+If a configuration file is not found, the daemon will use the default configuration. Configuration can be customized through the REST API.
 
 ## Saves
-Saves are stored at _/var/lib/factoriod/_ as _*.zip_ files. The daemon will automatically load the most recent save on startup.
+Saves are stored at _/var/lib/factoriod/saves/_ as _*.zip_ files. The daemon will automatically load the most recent save on startup.
 To load a different save, use the `PUT api/save/{name}` endpoint.
 To create a new save, use the `PUT api/save/create/{name}` endpoint.

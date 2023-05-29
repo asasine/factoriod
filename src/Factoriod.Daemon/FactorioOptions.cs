@@ -18,21 +18,21 @@ namespace Factoriod.Daemon.Options
     public sealed class FactorioExecutable
     {
         [Required]
-        public string DownloadDirectory { get; set; } = null!;
+        public string RootDirectory { get; set; } = null!;
         public string ExecutableDirectory { get; set; } = null!;
         public string ExecutableName { get; set; } = null!;
 
         public string Version { get; set; } = null!;
         public bool UseExperimental { get; set; }
 
-        public DirectoryInfo GetDownloadDirectory()
-            => new DirectoryInfo(this.DownloadDirectory).Resolve();
+        public DirectoryInfo GetRootDirectory()
+            => new DirectoryInfo(this.RootDirectory).Resolve();
 
         public DirectoryInfo GetFactorioDirectory()
-            => new(Path.Combine(GetDownloadDirectory().FullName, "factorio"));
+            => new(Path.Combine(GetRootDirectory().FullName, "factorio"));
 
         public DirectoryInfo GetUpdatesDirectory()
-            => new(Path.Combine(GetDownloadDirectory().FullName, "updates"));
+            => new(Path.Combine(GetRootDirectory().FullName, "updates"));
 
         public FileInfo GetExecutablePath(DirectoryInfo rootDirectory)
             => new FileInfo(Path.Combine(rootDirectory.FullName, this.ExecutableDirectory, this.ExecutableName)).Resolve();
