@@ -133,7 +133,6 @@ namespace Factoriod.Daemon.Options
         [Required]
         public string RootDirectory { get; set; } = null!;
         public string MapGenSettingsPath { get; set; } = null!;
-        public int? MapGenSeed { get; set; }
         public string MapSettingsPath { get; set; } = null!;
 
         public FileInfo GetMapGenSettingsPath()

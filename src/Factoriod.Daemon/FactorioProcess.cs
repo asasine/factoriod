@@ -1,12 +1,17 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Factoriod.Daemon.Models;
 using Factoriod.Fetcher;
 using Factoriod.Models;
+using Factoriod.Models.Game;
 using Factoriod.Utilities;
 using Microsoft.Extensions.Options;
+using Mono.Unix;
 using Mono.Unix.Native;
+using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon;
 
@@ -181,6 +186,71 @@ public sealed class FactorioProcess : IDisposable
         this.logger.LogInformation("Setting current save to {save}", save);
         this.options.Saves.SetCurrentSavePath(new FileInfo(save.Path));
         this.serverRestartCts.Cancel();
+    }
+
+    public async Task<bool> CreateSaveAsync(string name, MapExchangeStringData mapExchangeStringData, CancellationToken cancellationToken = default)
+    {
+        this.logger.LogDebug("Creating new save {name}", name);
+        var savePath = this.options.Saves.GetSavePath(name);
+        if (savePath.Exists)
+        {
+            this.logger.LogWarning("Save file {path} already exists", savePath.FullName);
+            return exit(false);
+        }
+
+        this.serverWait.Reset();
+        this.serverRestartCts.Cancel();
+        this.logger.LogDebug("Waiting for factorio process to exit");
+        await (this.factorioProcess ?? Task.CompletedTask);
+
+        var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
+        if (factorioDirectory == null)
+        {
+            this.logger.LogWarning("Unable to find Factorio directory");
+            return exit(false);
+        }
+
+        this.logger.LogDebug($"Writing map-settings.json and map-gen-settings.json");
+
+        var mapSettingsPath = Path.GetTempFileName();
+        var mapGenSettingsPath = Path.GetTempFileName();
+
+        var jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            DictionaryKeyPolicy = JsonNamingPolicies.KebabCaseLower,
+            PropertyNamingPolicy = JsonNamingPolicies.SnakeCaseLower,
+            NumberHandling = JsonNumberHandling.Strict,
+        };
+
+        using var mapSettingsStream = File.OpenWrite(mapSettingsPath);
+        await JsonSerializer.SerializeAsync(mapSettingsStream, mapExchangeStringData.MapSettings, jsonOptions, cancellationToken);
+        mapSettingsStream.WriteByte((byte)'\n');
+        this.logger.LogDebug("Wrote map-settings.json to {path}", mapSettingsPath);
+
+        using var mapGenSettingsStream = File.OpenWrite(mapGenSettingsPath);
+        await JsonSerializer.SerializeAsync(mapGenSettingsStream, mapExchangeStringData.MapGenSettings, jsonOptions, cancellationToken);
+        mapGenSettingsStream.WriteByte((byte)'\n');
+        this.logger.LogDebug("Wrote map-gen-settings.json to {path}", mapGenSettingsPath);
+
+        await Task.WhenAll(mapSettingsStream.FlushAsync(cancellationToken), mapGenSettingsStream.FlushAsync(cancellationToken));
+
+        savePath = await CreateSaveAsync(factorioDirectory, savePath, new FileInfo(mapGenSettingsPath), new FileInfo(mapSettingsPath), mapExchangeStringData.MapGenSettings.Seed, cancellationToken);
+        if (savePath == null)
+        {
+            this.logger.LogWarning("Failed to create save file");
+            return exit(false);
+        }
+
+        this.options.Saves.SetCurrentSavePath(savePath);
+        this.logger.LogDebug("Created save file {path}", savePath.FullName);
+        return exit(true);
+
+        bool exit(bool success)
+        {
+            this.serverWait.Set();
+            return success;
+        }
     }
 
     /// <summary>
@@ -428,6 +498,9 @@ public sealed class FactorioProcess : IDisposable
     private async Task<FileInfo?> CreateSaveAsync(
         DirectoryInfo factorioDirectory,
         FileInfo savePath,
+        FileInfo? mapGenSettingsPath = null,
+        FileInfo? mapSettingsPath = null,
+        uint? seed = null,
         CancellationToken cancellationToken = default)
     {
         this.logger.LogInformation("Creating save file {path}", savePath);
@@ -438,12 +511,12 @@ public sealed class FactorioProcess : IDisposable
             savePath.FullName,
         };
 
-        AddArgumentIfFileExists(arguments, "--map-gen-settings", this.options.MapGeneration.GetMapGenSettingsPath());
-        AddArgumentIfFileExists(arguments, "--map-settings", this.options.MapGeneration.GetMapSettingsPath());
-        if (this.options.MapGeneration.MapGenSeed.HasValue)
+        AddArgumentIfFileExists(arguments, "--map-gen-settings", mapGenSettingsPath ?? this.options.MapGeneration.GetMapGenSettingsPath());
+        AddArgumentIfFileExists(arguments, "--map-settings", mapSettingsPath ?? this.options.MapGeneration.GetMapSettingsPath());
+        if (seed.HasValue)
         {
             arguments.Add("--map-gen-seed");
-            arguments.Add(this.options.MapGeneration.MapGenSeed.Value.ToString());
+            arguments.Add(seed.Value.ToString());
         }
 
         using var createSaveProcess = new Process

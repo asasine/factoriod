@@ -59,11 +59,17 @@ namespace Factoriod.Daemon.Controllers
         }
 
         [HttpPut("create/{name}", Name = "CreateSave")]
-        public ActionResult<MapExchangeStringData> CreateSave(string name, [FromBody] MapExchangeStringData mapExchangeStringData)
+        public async Task<ActionResult<MapExchangeStringData>> CreateSave(string name, [FromBody] MapExchangeStringData mapExchangeStringData)
         {
-            this.logger.LogDebug("Attempting to create save named {save} with map exchange string data {mapExchangeStringData}", name, mapExchangeStringData);
-            return Ok(mapExchangeStringData);
-            return AcceptedAtRoute("GetServerStatus");
+            this.logger.LogDebug("Attempting to create save named {save}", name);
+            // TODO: Validate mapExchangeStringData
+            var success = await this.factorioProcess.CreateSaveAsync(name, mapExchangeStringData);
+            if (!success)
+            {
+                return BadRequest();
+            }
+
+            return AcceptedAtRoute("GetServerStatus", null, mapExchangeStringData);
         }
     }
 }
