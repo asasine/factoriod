@@ -186,6 +186,6 @@ public class FactorioBinaryReader : BinaryReader
     {
         var treatMissingAsDefault = ReadBoolean();
         var settings = ReadAutoplaceControls();
-        return new AutoplaceSettings(treatMissingAsDefault, new(settings));
+        return new AutoplaceSettings(treatMissingAsDefault, settings);
     }
 }

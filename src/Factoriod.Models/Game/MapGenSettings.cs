@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Factoriod.Utilities;
 
 namespace Factoriod.Models.Game;
 
@@ -26,7 +27,7 @@ public record MapGenSettings(
     IReadOnlyDictionary<string, string>? PropertyExpressionNames = null
 )
 {
-    public IReadOnlyDictionary<string, AutoplaceControl> AutoplaceControls { get; } = AutoplaceControls ?? new PrintableReadOnlyDictionary<string, AutoplaceControl>(new Dictionary<string, AutoplaceControl>
+    private static readonly IReadOnlyDictionary<string, AutoplaceControl> defaultAutoplaceControls = new Dictionary<string, AutoplaceControl>
     {
         { "coal", new AutoplaceControl(1, 1, 1) },
         { "copper-ore", new AutoplaceControl(1, 1, 1) },
@@ -36,8 +37,9 @@ public record MapGenSettings(
         { "stone", new AutoplaceControl(1, 1, 1) },
         { "trees", new AutoplaceControl(1, 1, 1) },
         { "uranium-ore", new AutoplaceControl(1, 1, 1) },
-    });
+    };
 
+    public IReadOnlyDictionary<string, AutoplaceControl> AutoplaceControls { get; } = new PrintableReadOnlyDictionary<string, AutoplaceControl>(AutoplaceControls?.WithDefaults(defaultAutoplaceControls) ?? defaultAutoplaceControls);
     public IReadOnlyDictionary<string, AutoplaceSettings> AutoplaceSettings { get; } = AutoplaceSettings ?? new PrintableReadOnlyDictionary<string, AutoplaceSettings>();
     public CliffPlacementSettings CliffSettings { get; } = CliffSettings ?? new();
     public IReadOnlyCollection<MapPosition> StartingPoints { get; } = StartingPoints ?? new PrintableReadOnlyCollection<MapPosition>(new MapPosition(0, 0));

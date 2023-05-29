@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace Factoriod.Models.Game;
+namespace Factoriod.Utilities;
 
 public class PrintableReadOnlyCollection<TValue> : IReadOnlyCollection<TValue>
 {

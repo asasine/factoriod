@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Factoriod.Models.Game;
+namespace Factoriod.Utilities;
 
 public class PrintableReadOnlyDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
     where TKey : notnull

@@ -4,11 +4,11 @@ namespace Factoriod.Models.Game;
 
 public record AutoplaceControl(
     [Range(0, 6)]
-    float Frequency,
+    float Frequency = 1,
 
     [Range(0, 6)]
-    float Size,
+    float Size = 1,
 
     [Range(0, 6)]
-    float Richness
+    float Richness = 1
 );
