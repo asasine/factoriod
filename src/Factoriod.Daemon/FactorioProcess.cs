@@ -667,8 +667,33 @@ public sealed class FactorioProcess : IDisposable
             arguments.Add("--use-server-whitelist");
         }
 
-        AddArgumentIfFileExists(arguments, "--server-banlist", this.options.Configuration.GetServerBanlistPath());
-        AddArgumentIfFileExists(arguments, "--server-adminlist", this.options.Configuration.GetServerAdminlistPath());
+        // empty banlist and adminlist files are required, otherwise adding players with in-game commands adds to a file in the executable directory
+        // this file might get blown away by updates, so we make our own in the state directory
+        var banlist = this.options.Configuration.GetServerBanlistPath();
+        if (!banlist.Exists)
+        {
+            this.logger.LogDebug("No server banlist was found, creating an empty one.");
+            using var banlistStream = banlist.OpenWrite();
+            banlistStream.WriteByte((byte)'[');
+            banlistStream.WriteByte((byte)']');
+            banlistStream.Flush();
+        }
+
+        arguments.Add("--server-banlist");
+        arguments.Add(banlist.FullName);
+
+        var adminlist = this.options.Configuration.GetServerAdminlistPath();
+        if (!adminlist.Exists)
+        {
+            this.logger.LogDebug("No server adminlist was found, creating an empty one.");
+            using var adminlistStream = adminlist.OpenWrite();
+            adminlistStream.WriteByte((byte)'[');
+            adminlistStream.WriteByte((byte)']');
+            adminlistStream.Flush();
+        }
+
+        arguments.Add("--server-adminlist");
+        arguments.Add(adminlist.FullName);
     }
 
     private void AddModsArguments(List<string> arguments)
