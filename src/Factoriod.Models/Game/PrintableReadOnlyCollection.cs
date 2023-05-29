@@ -8,6 +8,11 @@ public class PrintableReadOnlyCollection<TValue> : IReadOnlyCollection<TValue>
     public PrintableReadOnlyCollection(IReadOnlyCollection<TValue>? collection = null)
         => this.collection = collection ?? Array.Empty<TValue>();
 
+    public PrintableReadOnlyCollection(params TValue[] collection)
+        : this((IReadOnlyCollection<TValue>)collection)
+    {
+    }
+
     public int Count => collection.Count;
 
     public IEnumerator<TValue> GetEnumerator()

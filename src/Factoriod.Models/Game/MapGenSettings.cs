@@ -1,21 +1,32 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Factoriod.Models.Game;
 
 public record MapGenSettings(
+    [Range(0, 6)]
     float TerrainSegmentation = 1,
+
+    [Range(0, 6)]
     float Water = 1,
-    PrintableReadOnlyDictionary<string, AutoplaceControl>? AutoplaceControls = null,
-    PrintableReadOnlyDictionary<string, AutoplaceSettings>? AutoplaceSettings = null,
+    IReadOnlyDictionary<string, AutoplaceControl>? AutoplaceControls = null,
+    IReadOnlyDictionary<string, AutoplaceSettings>? AutoplaceSettings = null,
     CliffPlacementSettings? CliffSettings = null,
     uint? Seed = null,
+
+    [Range(0, 2000000)]
     uint Width = 0,
+
+    [Range(0, 2000000)]
     uint Height = 0,
+
+    [Range(0, 6)]
     float StartingArea = 1,
-    PrintableReadOnlyCollection<MapPosition>? StartingPoints = null,
+    IReadOnlyCollection<MapPosition>? StartingPoints = null,
     bool PeacefulMode = false,
-    PrintableReadOnlyDictionary<string, string>? PropertyExpressionNames = null
+    IReadOnlyDictionary<string, string>? PropertyExpressionNames = null
 )
 {
-    public PrintableReadOnlyDictionary<string, AutoplaceControl> AutoplaceControls { get; } = AutoplaceControls ?? new(new Dictionary<string, AutoplaceControl>
+    public IReadOnlyDictionary<string, AutoplaceControl> AutoplaceControls { get; } = AutoplaceControls ?? new PrintableReadOnlyDictionary<string, AutoplaceControl>(new Dictionary<string, AutoplaceControl>
     {
         { "coal", new AutoplaceControl(1, 1, 1) },
         { "copper-ore", new AutoplaceControl(1, 1, 1) },
@@ -27,12 +38,8 @@ public record MapGenSettings(
         { "uranium-ore", new AutoplaceControl(1, 1, 1) },
     });
 
-    public PrintableReadOnlyDictionary<string, AutoplaceSettings> AutoplaceSettings { get; } = AutoplaceSettings ?? new();
+    public IReadOnlyDictionary<string, AutoplaceSettings> AutoplaceSettings { get; } = AutoplaceSettings ?? new PrintableReadOnlyDictionary<string, AutoplaceSettings>();
     public CliffPlacementSettings CliffSettings { get; } = CliffSettings ?? new();
-    public PrintableReadOnlyCollection<MapPosition> StartingPoints { get; } = StartingPoints ?? new(new MapPosition[]
-    {
-        new MapPosition(0, 0),
-    });
-
-    public PrintableReadOnlyDictionary<string, string> PropertyExpressionNames { get; } = PropertyExpressionNames ?? new();
+    public IReadOnlyCollection<MapPosition> StartingPoints { get; } = StartingPoints ?? new PrintableReadOnlyCollection<MapPosition>(new MapPosition(0, 0));
+    public IReadOnlyDictionary<string, string> PropertyExpressionNames { get; } = PropertyExpressionNames ?? new PrintableReadOnlyDictionary<string, string>();
 }
