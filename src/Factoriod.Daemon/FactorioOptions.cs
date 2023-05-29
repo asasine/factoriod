@@ -110,6 +110,9 @@ namespace Factoriod.Daemon.Options
             currentSaveLink.CreateAsSymbolicLink(save.FullName);
         }
 
+        public FileInfo GetSavePath(string name)
+            => new(Path.Combine(GetRootDirectory().FullName, $"{name}.zip"));
+
         /// <summary>
         /// List all saves in the saves directory, ordered by last write time descending.
         /// </summary>

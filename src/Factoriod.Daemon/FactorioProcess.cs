@@ -32,6 +32,7 @@ public sealed class FactorioProcess : IDisposable
     /// A cancellation token source that can be cancelled to restart the factorio process.
     /// </summary>
     private CancellationTokenSource serverRestartCts = new();
+    private readonly ManualResetEventSlim serverWait = new(true);
 
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
@@ -56,6 +57,13 @@ public sealed class FactorioProcess : IDisposable
         //  if a save doesn't exist, create one
         while (true)
         {
+            serverWait.Wait(serverStoppingToken);
+            if (serverStoppingToken.IsCancellationRequested)
+            {
+                this.logger.LogInformation("Server stopping.");
+                return 0;
+            }
+
             using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(serverStoppingToken, this.serverRestartCts.Token);
             var cancellationToken = cancellationTokenSource.Token;
             this.ServerStatus.ServerState = ServerState.Launching;
