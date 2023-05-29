@@ -422,6 +422,14 @@ public sealed class FactorioProcess : IDisposable
             this.logger.LogDebug("No save file found, creating {path}", savePath);
         }
 
+        return await CreateSaveAsync(factorioDirectory, savePath, cancellationToken: cancellationToken);
+    }
+
+    private async Task<FileInfo?> CreateSaveAsync(
+        DirectoryInfo factorioDirectory,
+        FileInfo savePath,
+        CancellationToken cancellationToken = default)
+    {
         this.logger.LogInformation("Creating save file {path}", savePath);
 
         var arguments = new List<string>()
