@@ -45,7 +45,6 @@
     <Content Include="appsettings.json">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <LinuxPath>/etc/factoriod/appsettings.json</LinuxPath>
     </Content>
 
     <Content Include="appsettings.Development.json">

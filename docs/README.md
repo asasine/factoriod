@@ -50,3 +50,8 @@ vim /etc/factoriod/server-settings.json
 # then restart the daemon
 sudo systemctl restart factoriod
 ```
+
+## Saves
+Saves are stored at _/var/lib/factoriod/_ as _*.zip_ files. The daemon will automatically load the most recent save on startup.
+To load a different save, use the `PUT api/save/{name}` endpoint.
+To create a new save, use the `PUT api/save/create/{name}` endpoint.

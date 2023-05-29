@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Factoriod.Fetcher;
 using Yoh.Text.Json.NamingPolicies;
@@ -31,6 +31,8 @@ namespace Factoriod.Daemon
             builder.Services.AddSingleton<FactorioProcess>();
 
             var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
+            var cacheDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY");
+            var stateDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY");
             if (configurationDirectory is not null)
             {
                 builder.Configuration.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), optional: true, reloadOnChange: true);
@@ -42,20 +44,20 @@ namespace Factoriod.Daemon
                 {
                     options.Executable = new Options.FactorioExecutable
                     {
-                        DownloadDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY")!,
+                        DownloadDirectory = cacheDirectory ?? string.Empty,
                     };
 
                     options.Configuration = new Options.FactorioConfiguration
                     {
-                        RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
+                        RootDirectory = configurationDirectory ?? string.Empty,
                     };
 
                     options.Saves = new Options.FactorioSaves
                     {
-                        RootDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY")!,
+                        RootDirectory = stateDirectory ?? string.Empty,
                     };
 
-                    options.ModsRootDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY")!;
+                    options.ModsRootDirectory = Path.Combine(cacheDirectory ?? string.Empty, "mods");
                 })
                 .BindConfiguration("Factorio")
                 .ValidateDataAnnotations();
