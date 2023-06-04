@@ -125,6 +125,18 @@ public sealed class FactorioProcess : IHostedService, IDisposable
         }
     }
 
+    /// <summary>
+    /// Restarts the factorio process.
+    /// Cancelling this operation may leave the factorio process stopped.
+    /// </summary>
+    /// <param name="cancellationToken">Indicates whether the restart should be aborted.</param>
+    /// <returns>A task that represents the restart operation.</returns>
+    public async Task RestartAsync(CancellationToken cancellationToken = default)
+    {
+        await StopAsync(cancellationToken);
+        await StartAsync(cancellationToken);
+    }
+
     private async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
     {
         // find a downloaded factorio

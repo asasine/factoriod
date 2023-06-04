@@ -43,7 +43,7 @@ public class ServerController : ControllerBase
     }
 
     [HttpPost("settings", Name = "UpdateServerSettings")]
-    public async Task<ActionResult<ServerSettingsWithSecrets>> UpdateServerSettings([FromBody] ServerSettingsWithSecrets serverSettingsWithSecrets)
+    public async Task<ActionResult<ServerSettingsWithSecrets>> UpdateServerSettings([FromBody] ServerSettingsWithSecrets serverSettingsWithSecrets, [FromQuery] bool restart = false)
     {
         var serverSettingsPath = this.options.Value.Configuration.GetServerSettingsPath();
         using var serverSettingsStream = serverSettingsPath.Exists ? serverSettingsPath.Open(FileMode.Truncate) : serverSettingsPath.OpenWrite();
@@ -58,6 +58,14 @@ public class ServerController : ControllerBase
 
         await JsonSerializer.SerializeAsync(serverSettingsStream, serverSettingsWithSecrets, jsonOptions);
         serverSettingsStream.WriteByte((byte)'\n');
+        await serverSettingsStream.FlushAsync();
+
+        if (restart)
+        {
+            this.logger.LogInformation("Restarting factorio after writing server settings.");
+            await this.factorioProcess.RestartAsync();
+        }
+
         return Ok(serverSettingsWithSecrets);
     }
 }
