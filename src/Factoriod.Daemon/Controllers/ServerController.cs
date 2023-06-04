@@ -57,6 +57,7 @@ public class ServerController : ControllerBase
         };
 
         await JsonSerializer.SerializeAsync(serverSettingsStream, serverSettingsWithSecrets, jsonOptions);
+        serverSettingsStream.WriteByte((byte)'\n');
         return Ok(serverSettingsWithSecrets);
     }
 }
