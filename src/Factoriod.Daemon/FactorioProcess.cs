@@ -668,22 +668,29 @@ public sealed class FactorioProcess : IHostedService, IDisposable
 
         try
         {
-            // NOTE: when cancellationToken is signaled, the process receives SIGTERM
+            // NOTE: when our parent process is shutting down, the process receives SIGTERM
+            // however, if just cancellationToken is cancelled, no signal is sent to the underlying process
             await process.WaitForExitAsync(cancellationToken);
         }
         catch (TaskCanceledException)
         {
         }
 
+        if (!process.HasExited)
+        {
+            this.logger.LogDebug("Sending SIGINT to process {pid}", process.Id);
+            Syscall.kill(process.Id, Signum.SIGINT);
+        }
+
         async Task waitForExitWithSignalEscalation(Signum signum, string format, params object?[] args)
         {
-            if (cancellationToken.IsCancellationRequested && !process.HasExited)
+            if (!process.HasExited)
             {
                 this.logger.LogDebug(format, args);
-                using var sigintCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                using var signalCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                 try
                 {
-                    await process.WaitForExitAsync(sigintCts.Token);
+                    await process.WaitForExitAsync(signalCts.Token);
                 }
                 catch (TaskCanceledException)
                 {
@@ -693,7 +700,6 @@ public sealed class FactorioProcess : IHostedService, IDisposable
         }
 
         // System.Diagnostics.Process cancellation sometimes doesn't send signals to the underlying process when the cancellationToken is cancelled, so we have to do it ourselves
-        await waitForExitWithSignalEscalation(Signum.SIGINT, "Cancellation requested, waiting 5s for process {pid} to exit before sending SIGINT (sometimes required for restarts and shutdowns)", process.Id);
         await waitForExitWithSignalEscalation(Signum.SIGTERM, "SIGINT sent, waiting 5s for process {pid} to exit before escalating to SIGTERM", process.Id);
         await waitForExitWithSignalEscalation(Signum.SIGKILL, "SIGTERM sent, waiting 5s for process {pid} to exit before escalating to SIGKILL.", process.Id);
 
