@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Factoriod.Fetcher;
+using Factoriod.Utilities;
 using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon
@@ -24,9 +25,7 @@ namespace Factoriod.Daemon
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // register FactorioProcess as a hosted service and a singleton so services can access its public methods too
-            builder.Services.AddHostedService<FactorioProcess>();
-            builder.Services.AddSingleton<FactorioProcess>();
+            builder.Services.AddSingletonHostedService<FactorioProcess>();
 
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
