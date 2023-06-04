@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 using Factoriod.Utilities;
 
 namespace Factoriod.Models.Game;
@@ -13,9 +12,6 @@ namespace Factoriod.Models.Game;
 /// <param name="MaxPlayers">Maximum number of players allkowed, admins can join even a full server. Defaults to unlimited.</param>
 /// <param name="Visibility">Visibility of the game.</param>
 /// <param name="Username">Your factorio.com login credentials. Required for games with <see cref="Visibility.Public"/></param>
-/// <param name="Password">Your factorio.com login credentials. Required for games with <see cref="Visibility.Public"/></param>
-/// <param name="Token">Authentication token. May be used instead of <paramref name="Password"/> above.</param>
-/// <param name="GamePassword">The password to join the game.</param>
 /// <param name="RequireUserVerification">When set to true, the server will only allow clients that have a valid Factorio.com account</param>
 /// <param name="MaxUploadInKilobytesPerSecond">Maximum number of KB/s that the server will upload. Defaults to unlimited.</param>
 /// <param name="MaxUploadSlots">Maximum number of slots the server will upload./param>
@@ -42,9 +38,6 @@ public record ServerSettings(
     uint? MaxPlayers = null,
     Visibility? Visibility = null,
     string Username = "",
-    string Password = "",
-    string Token = "",
-    string GamePassword = "",
     bool RequireUserVerification = true,
     uint? MaxUploadInKilobytesPerSecond = null,
     uint? MaxUploadSlots = null,
@@ -52,7 +45,6 @@ public record ServerSettings(
 
     [Range(6, 240)]
     uint MaxHeartbeatsPerSecond = 60,
-
     bool IgnorePlayerLimitForReturningPlayers = false,
 
     [RegularExpression(@"^((true)|(false)|(admins-only))", ErrorMessage = "Possible values are true, false, and admins-only")]
@@ -73,55 +65,24 @@ public record ServerSettings(
     public IReadOnlyCollection<string> Tags { get; } = new PrintableReadOnlyCollection<string>(Tags ?? Array.Empty<string>());
     public uint? MaxPlayers { get; } = MaxPlayers ?? 0;
     public Visibility Visibility { get; } = Visibility ?? new();
-
-    /// <summary>
-    /// Your factorio.com login credentials. Required for games with <see cref="Visibility.Public"/>
-    /// </summary>
-    /// <remarks>This property is marked with <see cref="JsonIgnoreAttribute"/> in order to be not be serialized (only deserialized).</remarks>
-    [JsonIgnore]
-    public string Password { get; private set; } = Password;
-
-    /// <summary>
-    /// Your factorio.com login credentials. Required for games with <see cref="Visibility.Public"/>
-    /// </summary>
-    /// <remarks>This property is only settable, and is marked with <see cref="JsonPropertyNameAttribute"/> with <see cref="Password"/>, in order to be not be serialized (only deserialized).</remarks>
-    [JsonPropertyName("password")]
-    public string UnserializedPassword { set { Password = value; } }
-
-    /// <summary>
-    /// Authentication token. May be used instead of <see cref="Password"/> above.
-    /// </summary>
-    /// <remarks>This property is marked with <see cref="JsonIgnoreAttribute"/> in order to be not be serialized (only deserialized).</remarks>
-    [JsonIgnore]
-    public string Token { get; private set; } = Token;
-
-    /// <summary>
-    /// Authentication token. May be used instead of <see cref="Password"/> above.
-    /// </summary>
-    /// <remarks>This property is only settable, and is marked with <see cref="JsonPropertyNameAttribute"/> with <see cref="Token"/>, in order to be not be serialized (only deserialized).</remarks>
-    [JsonPropertyName("token")]
-    public string UnserializedToken { set { Token = value; } }
-
-    /// <summary>
-    /// The password to join the game.
-    /// </summary>
-    /// <remarks>This property is marked with <see cref="JsonIgnoreAttribute"/> in order to be not be serialized (only deserialized).</remarks>
-    [JsonIgnore]
-    public string GamePassword { get; private set; } = GamePassword;
-
-    /// <summary>
-    /// The password to join the game.
-    /// </summary>
-    /// <remarks>This property is only settable, and is marked with <see cref="JsonPropertyNameAttribute"/> with <see cref="GamePassword"/>, in order to be not be serialized (only deserialized).</remarks>
-    [JsonPropertyName("game_password")]
-    public string UnserializedGamePassword { set { GamePassword = value; } }
-
     public uint? MaxUploadInKilobytesPerSecond { get; } = MaxUploadInKilobytesPerSecond ?? 0;
     public uint? MaxUploadSlots { get; } = MaxUploadSlots ?? 5;
     public uint? MinimumLatencyInTicks { get; } = MinimumLatencyInTicks ?? 0;
     public uint? AfkAutokickInterval { get; } = AfkAutokickInterval ?? 0;
 
 }
+
+/// <summary>
+/// Factorio server settings, including secrets.
+/// </summary>
+/// <param name="Password">Your factorio.com login credentials. Required for games with <see cref="Visibility.Public"/></param>
+/// <param name="Token">Authentication token. May be used instead of <paramref name="Password"/> above.</param>
+/// <param name="GamePassword">The password to join the game.</param>
+public record ServerSettingsWithSecrets(
+    string Password = "",
+    string Token = "",
+    string GamePassword = ""
+) : ServerSettings;
 
 /// <summary>
 /// Visibility of a game.

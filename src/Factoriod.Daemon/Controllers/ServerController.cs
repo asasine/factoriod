@@ -35,8 +35,23 @@ public class ServerController : ControllerBase
         }
 
         this.logger.LogTrace("Reading server settings file {path}.", serverSettingsPath.FullName);
-        await using var serverSettingsStream = serverSettingsPath.OpenRead();
+        using var serverSettingsStream = serverSettingsPath.OpenRead();
         var serverSettings = await JsonSerializer.DeserializeAsync<ServerSettings>(serverSettingsStream) ?? throw new InvalidOperationException($"Failed to deserialize {serverSettingsPath}");
         return Ok(serverSettings);
+    }
+
+    [HttpPost("settings", Name = "UpdateServerSettings")]
+    public async Task<ActionResult<ServerSettingsWithSecrets>> UpdateServerSettings([FromBody] ServerSettingsWithSecrets serverSettingsWithSecrets)
+    {
+        var serverSettingsPath = this.options.Value.Configuration.GetServerSettingsPath();
+        if (serverSettingsPath.Exists)
+        {
+            this.logger.LogDebug("Server settings file {path} exists", serverSettingsPath.FullName);
+        }
+
+        this.logger.LogTrace("Writing server settings to file {path}", serverSettingsPath.FullName);
+        using var serverSettingsStream = serverSettingsPath.OpenWrite();
+        await JsonSerializer.SerializeAsync(serverSettingsStream, serverSettingsWithSecrets);
+        return Ok(serverSettingsWithSecrets);
     }
 }
