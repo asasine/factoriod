@@ -15,7 +15,7 @@ using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon;
 
-public sealed class FactorioProcess : IDisposable
+public sealed class FactorioProcess : IHostedService, IDisposable
 {
     private readonly ILogger<FactorioProcess> logger;
     private readonly Options.Factorio options;
@@ -34,11 +34,14 @@ public sealed class FactorioProcess : IDisposable
     private FactorioException? incompatibleMapVersionError = null;
 
     /// <summary>
-    /// A cancellation token source that can be cancelled to restart the factorio process.
+    /// A cancellation token source for the currently-running factorio process.
     /// </summary>
-    private CancellationTokenSource serverRestartCts = new();
-    private readonly ManualResetEventSlim serverWait = new(true);
-    private Task? factorioProcess = null;
+    private CancellationTokenSource processCts = new();
+
+    /// <summary>
+    /// The asynchronous operation which launched the factorio process.
+    /// </summary>
+    private Task? factorioTask = null;
 
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
@@ -51,132 +54,188 @@ public sealed class FactorioProcess : IDisposable
 
     public void Dispose()
     {
-        this.serverRestartCts.Dispose();
+        this.processCts.Dispose();
+        this.factorioTask?.Dispose();
     }
 
-    public async Task<int> StartServerAsync(CancellationToken serverStoppingToken = default)
+    /// <summary>
+    /// Start a new factorio process.
+    /// If a process is already running, this method returns immediately.
+    /// </summary>
+    /// <param name="cancellationToken">Indicates when the start process should be aborted.</param>
+    /// <returns>A task that represents the start operation. This does not include waiting for the factorio process to complete.</returns>
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        if (this.factorioTask != null)
+        {
+            // previously started
+            if (!this.factorioTask.IsCompleted)
+            {
+                // not completed, nothing to do
+                return Task.CompletedTask;
+            }
+            else
+            {
+                // completed, restart it
+                this.factorioTask.Dispose();
+                this.factorioTask = null;
+            }
+        }
+
+        this.processCts.Dispose();
+        this.processCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        this.factorioTask = StartServerAsync(this.processCts.Token);
+
+        if (this.factorioTask.IsCompleted)
+        {
+            // the task completed synchronously, bubble up its cancellation and failures
+            return this.factorioTask;
+        }
+
+        // otherwise, it's running, return a completed task
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Stops the running factorio process.
+    /// If no process is running, this method returns immediately.
+    /// This method returns when the factorio process has exited or cancellation has been requested.
+    /// </summary>
+    /// <param name="cancellationToken">Indicates when shutdown should no longer be graceful.</param>
+    /// <returns>A task that represents the stop operation, including waiting for the factorio process to exit.</returns>
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (this.factorioTask == null || this.factorioTask.IsCompleted)
+        {
+            this.factorioTask?.Dispose();
+            this.factorioTask = null;
+            return;
+        }
+
+        try
+        {
+            this.processCts.Cancel();
+        }
+        finally
+        {
+            // wait for the task to finish, or cancellationToken to trigger
+            var tcs = new TaskCompletionSource();
+            using var ctr = cancellationToken.Register(s => ((TaskCompletionSource)s!).SetCanceled(), tcs);
+            await Task.WhenAny(this.factorioTask, tcs.Task);
+        }
+    }
+
+    private async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
     {
         // find a downloaded factorio
         //  if a version doesn't exist, download it
         //  if an outdated version exists, update it
         // start the server
         //  if a save doesn't exist, create one
-        while (true)
+        if (cancellationToken.IsCancellationRequested)
         {
-            serverWait.Wait(serverStoppingToken);
-            if (serverStoppingToken.IsCancellationRequested)
+            this.logger.LogDebug("Cancellation requested immediately after starting.");
+            return 0;
+        }
+
+        this.ServerStatus.ServerState = ServerState.Launching;
+        var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
+        if (factorioDirectory == null)
+        {
+            this.logger.LogWarning("Unable to find Factorio directory");
+            return 1;
+        }
+
+        this.logger.LogInformation("Starting factorio process");
+
+        var arguments = new List<string>();
+        var savePath = await SelectOrCreateSave(factorioDirectory, cancellationToken);
+        if (savePath == null)
+        {
+            this.logger.LogWarning("Could not create save file.");
+            return 1;
+        }
+
+        var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", savePath);
+        if (!addedStartServer)
+        {
+            this.logger.LogError("Unable to find save file {path}", savePath);
+            return 1;
+        }
+
+        this.logger.LogInformation("Using save {name} (path: {file})", savePath.Name, savePath);
+
+        AddServerSettingsArguments(arguments);
+        AddServerPlayerListsArguments(arguments);
+        AddModsArguments(arguments);
+
+        var saveBackup = BackupFile(savePath);
+        if (saveBackup == null)
+        {
+            this.logger.LogWarning("Failed to create backup for save file {path}", savePath);
+        }
+
+        using var factorioProcess = new Process()
+        {
+            StartInfo = new ProcessStartInfo
             {
-                this.logger.LogInformation("Server stopping.");
+                FileName = Path.Combine(factorioDirectory.FullName, this.options.Executable.ExecutableDirectory, this.options.Executable.ExecutableName),
+                Arguments = string.Join(' ', arguments),
+                WorkingDirectory = factorioDirectory.FullName,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                CreateNoWindow = true,
+            },
+        };
+
+        this.ServerStatus.SetRunning(new Save(savePath.FullName));
+        var exitCode = await StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken);
+        this.ServerStatus.ServerState = ServerState.Exited;
+
+        if (incompatibleMapVersionError != null)
+        {
+            this.ServerStatus.SetFaulted(incompatibleMapVersionError);
+            this.logger.LogError("Could not run factorio", incompatibleMapVersionError);
+
+            return 1;
+        }
+
+        if (factorioProcess.HasExited)
+        {
+            // factorio process returns exit code 1 when its shutdown, consider this a successful code
+            if (factorioProcess.ExitCode == 1)
+            {
+                this.logger.LogTrace("Factorio process exited with code 1 (early shutdown), masking as 0.");
                 return 0;
             }
 
-            using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(serverStoppingToken, this.serverRestartCts.Token);
-            var cancellationToken = cancellationTokenSource.Token;
-            this.ServerStatus.ServerState = ServerState.Launching;
-            var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
-            if (factorioDirectory == null)
-            {
-                this.logger.LogWarning("Unable to find Factorio directory");
-                return 1;
-            }
-
-            this.logger.LogInformation("Starting factorio process");
-
-            var arguments = new List<string>();
-            var savePath = await SelectOrCreateSave(factorioDirectory, cancellationToken);
-            if (savePath == null)
-            {
-                this.logger.LogWarning("Could not create save file.");
-                return 1;
-            }
-
-            var addedStartServer = AddArgumentIfFileExists(arguments, "--start-server", savePath);
-            if (!addedStartServer)
-            {
-                this.logger.LogError("Unable to find save file {path}", savePath);
-                return 1;
-            }
-
-            this.logger.LogInformation("Using save {name} (path: {file})", savePath.Name, savePath);
-
-            AddServerSettingsArguments(arguments);
-            AddServerPlayerListsArguments(arguments);
-            AddModsArguments(arguments);
-
-            var saveBackup = BackupFile(savePath);
-            if (saveBackup == null)
-            {
-                this.logger.LogWarning("Failed to create backup for save file {path}", savePath);
-            }
-
-            using var factorioProcess = new Process()
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = Path.Combine(factorioDirectory.FullName, this.options.Executable.ExecutableDirectory, this.options.Executable.ExecutableName),
-                    Arguments = string.Join(' ', arguments),
-                    WorkingDirectory = factorioDirectory.FullName,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true,
-                    CreateNoWindow = true,
-                },
-            };
-
-            this.ServerStatus.SetRunning(new Save(savePath.FullName));
-            var previousFactorioProcess = Interlocked.Exchange(ref this.factorioProcess, StartProcessWithOutputHandlersAndWaitForExitAsync(factorioProcess, cancellationToken));
-            previousFactorioProcess?.Dispose();
-            await this.factorioProcess;
-            this.ServerStatus.ServerState = ServerState.Exited;
-
-            if (incompatibleMapVersionError != null)
-            {
-                this.ServerStatus.SetFaulted(incompatibleMapVersionError);
-                this.logger.LogError("Could not run factorio", incompatibleMapVersionError);
-
-                return 1;
-            }
-            else
-            {
-                this.ServerStatus.ServerState = ServerState.Exited;
-            }
-
-            if (this.serverRestartCts.IsCancellationRequested)
-            {
-                this.logger.LogInformation("Server restart requested, restarting");
-                var oldCts = Interlocked.Exchange(ref this.serverRestartCts, new CancellationTokenSource());
-                oldCts.Dispose();
-            }
-
-            if (serverStoppingToken.IsCancellationRequested)
-            {
-                this.logger.LogInformation("Server stopping.");
-                if (!factorioProcess.HasExited)
-                {
-                    this.logger.LogError("Server stopping requested, but factorio process has not exited.");
-                    return 1;
-                }
-
-                // factorio process returns exit code 1 when its shutdown, consider this a successful code
-                if (factorioProcess.ExitCode == 1)
-                {
-                    this.logger.LogTrace("Factorio process exited with code 1 (early shutdown), masking as 0.");
-                    return 0;
-                }
-
-                return factorioProcess.ExitCode;
-            }
+            return factorioProcess.ExitCode;
         }
+        
+        if (cancellationToken.IsCancellationRequested)
+        {
+            if (!factorioProcess.HasExited)
+            {
+                this.logger.LogWarning("Server stopping requested, but factorio process has not exited.");
+            }
+
+            return 1;
+        }
+
+        this.logger.LogWarning("Neither the factorio process not exited nor has a cancellation been requested. How did we get here?");
+        return -1;
     }
 
     /// <summary>
     /// Restarts the executing factorio process with the provided <paramref name="save"/>.
     /// </summary>
     /// <param name="save">The new save to start the factorio process with.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
     /// <exception cref="NotImplementedException">The method has not been implemented yet.</exception>
     /// <exception cref="FileNotFoundException">The save file was not found.</exception>
-    public void SetSave(Save save)
+    public async Task SetSave(Save save, CancellationToken cancellationToken = default)
     {
         if (!File.Exists(save.Path))
         {
@@ -185,7 +244,8 @@ public sealed class FactorioProcess : IDisposable
 
         this.logger.LogInformation("Setting current save to {save}", save);
         this.options.Saves.SetCurrentSavePath(new FileInfo(save.Path));
-        this.serverRestartCts.Cancel();
+        await this.StopAsync(cancellationToken);
+        await this.StartAsync(cancellationToken);
     }
 
     public async Task<bool> CreateSaveAsync(string name, MapExchangeStringData mapExchangeStringData, bool overwrite = false, CancellationToken cancellationToken = default)
@@ -197,22 +257,20 @@ public sealed class FactorioProcess : IDisposable
             if (!overwrite)
             {
                 this.logger.LogWarning("Save file {path} already exists, not overwriting", savePath.FullName);
-                return exit(false);
+                return await exit(false);
             }
 
             this.logger.LogInformation("Save file {path} already exists, overwriting", savePath.FullName);
         }
 
-        this.serverWait.Reset();
-        this.serverRestartCts.Cancel();
         this.logger.LogDebug("Waiting for factorio process to exit");
-        await (this.factorioProcess ?? Task.CompletedTask);
+        await this.StopAsync(cancellationToken);
 
         var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
         if (factorioDirectory == null)
         {
             this.logger.LogWarning("Unable to find Factorio directory");
-            return exit(false);
+            return await exit(false);
         }
 
         this.logger.LogDebug($"Writing map-settings.json and map-gen-settings.json");
@@ -244,16 +302,16 @@ public sealed class FactorioProcess : IDisposable
         if (savePath == null)
         {
             this.logger.LogWarning("Failed to create save file");
-            return exit(false);
+            return await exit(false);
         }
 
         this.options.Saves.SetCurrentSavePath(savePath);
         this.logger.LogDebug("Created save file {path}", savePath.FullName);
-        return exit(true);
+        return await exit(true);
 
-        bool exit(bool success)
+        async Task<bool> exit(bool success)
         {
-            this.serverWait.Set();
+            await this.StartAsync(cancellationToken);
             return success;
         }
     }

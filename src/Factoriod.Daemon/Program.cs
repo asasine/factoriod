@@ -24,11 +24,9 @@ namespace Factoriod.Daemon
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            builder.Services.AddHostedService<FactorioHostedService>();
+            builder.Services.AddHostedService<FactorioProcess>();
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
-
-            builder.Services.AddSingleton<FactorioProcess>();
 
             var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
             var cacheDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY");

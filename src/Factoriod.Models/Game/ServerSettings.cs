@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Factoriod.Utilities;
 
 namespace Factoriod.Models.Game;
@@ -76,23 +77,44 @@ public record ServerSettings(
     /// <summary>
     /// Your factorio.com login credentials. Required for games with <see cref="Visibility.Public"/>
     /// </summary>
-    /// <value>Your factorio.com login credentials. Required for games with <see cref="Visibility.Public"/></value>
-    /// <remarks>The getter of this property is marked as <see langword="internal"/> to prevent it from being serialized.</remarks>
-    public string Password { internal get; init; } = Password;
+    /// <remarks>This property is marked with <see cref="JsonIgnoreAttribute"/> in order to be not be serialized (only deserialized).</remarks>
+    [JsonIgnore]
+    public string Password { get; private set; } = Password;
+
+    /// <summary>
+    /// Your factorio.com login credentials. Required for games with <see cref="Visibility.Public"/>
+    /// </summary>
+    /// <remarks>This property is only settable, and is marked with <see cref="JsonPropertyNameAttribute"/> with <see cref="Password"/>, in order to be not be serialized (only deserialized).</remarks>
+    [JsonPropertyName("password")]
+    public string UnserializedPassword { set { Password = value; } }
 
     /// <summary>
     /// Authentication token. May be used instead of <see cref="Password"/> above.
     /// </summary>
-    /// <value>Authentication token. May be used instead of <see cref="Password"/> above.</value>
-    /// <remarks>The getter of this property is marked as <see langword="internal"/> to prevent it from being serialized.</remarks>
-    public string Token { internal get; init; } = Token;
+    /// <remarks>This property is marked with <see cref="JsonIgnoreAttribute"/> in order to be not be serialized (only deserialized).</remarks>
+    [JsonIgnore]
+    public string Token { get; private set; } = Token;
+
+    /// <summary>
+    /// Authentication token. May be used instead of <see cref="Password"/> above.
+    /// </summary>
+    /// <remarks>This property is only settable, and is marked with <see cref="JsonPropertyNameAttribute"/> with <see cref="Token"/>, in order to be not be serialized (only deserialized).</remarks>
+    [JsonPropertyName("token")]
+    public string UnserializedToken { set { Token = value; } }
 
     /// <summary>
     /// The password to join the game.
     /// </summary>
-    /// <value>The password to join the game.</value>
-    /// <remarks>The getter of this property is marked as <see langword="internal"/> to prevent it from being serialized.</remarks>
-    public string GamePassword { internal get; init; } = GamePassword;
+    /// <remarks>This property is marked with <see cref="JsonIgnoreAttribute"/> in order to be not be serialized (only deserialized).</remarks>
+    [JsonIgnore]
+    public string GamePassword { get; private set; } = GamePassword;
+
+    /// <summary>
+    /// The password to join the game.
+    /// </summary>
+    /// <remarks>This property is only settable, and is marked with <see cref="JsonPropertyNameAttribute"/> with <see cref="GamePassword"/>, in order to be not be serialized (only deserialized).</remarks>
+    [JsonPropertyName("game_password")]
+    public string UnserializedGamePassword { set { GamePassword = value; } }
 
     public uint? MaxUploadInKilobytesPerSecond { get; } = MaxUploadInKilobytesPerSecond ?? 0;
     public uint? MaxUploadSlots { get; } = MaxUploadSlots ?? 5;
