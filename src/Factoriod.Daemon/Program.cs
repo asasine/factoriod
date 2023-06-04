@@ -24,7 +24,10 @@ namespace Factoriod.Daemon
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            // register FactorioProcess as a hosted service and a singleton so services can access its public methods too
             builder.Services.AddHostedService<FactorioProcess>();
+            builder.Services.AddSingleton<FactorioProcess>();
+
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
 
