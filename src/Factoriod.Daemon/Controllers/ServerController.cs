@@ -1,8 +1,10 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Factoriod.Daemon.Models;
 using Factoriod.Models.Game;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon.Controllers;
 
@@ -44,14 +46,17 @@ public class ServerController : ControllerBase
     public async Task<ActionResult<ServerSettingsWithSecrets>> UpdateServerSettings([FromBody] ServerSettingsWithSecrets serverSettingsWithSecrets)
     {
         var serverSettingsPath = this.options.Value.Configuration.GetServerSettingsPath();
-        if (serverSettingsPath.Exists)
-        {
-            this.logger.LogDebug("Server settings file {path} exists", serverSettingsPath.FullName);
-        }
-
+        using var serverSettingsStream = serverSettingsPath.Exists ? serverSettingsPath.Open(FileMode.Truncate) : serverSettingsPath.OpenWrite();
         this.logger.LogTrace("Writing server settings to file {path}", serverSettingsPath.FullName);
-        using var serverSettingsStream = serverSettingsPath.OpenWrite();
-        await JsonSerializer.SerializeAsync(serverSettingsStream, serverSettingsWithSecrets);
+        var jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            DictionaryKeyPolicy = JsonNamingPolicies.KebabCaseLower,
+            PropertyNamingPolicy = JsonNamingPolicies.SnakeCaseLower,
+            NumberHandling = JsonNumberHandling.Strict,
+        };
+
+        await JsonSerializer.SerializeAsync(serverSettingsStream, serverSettingsWithSecrets, jsonOptions);
         return Ok(serverSettingsWithSecrets);
     }
 }
