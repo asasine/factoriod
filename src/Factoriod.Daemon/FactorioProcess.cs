@@ -9,13 +9,12 @@ using Factoriod.Models;
 using Factoriod.Models.Game;
 using Factoriod.Utilities;
 using Microsoft.Extensions.Options;
-using Mono.Unix;
 using Mono.Unix.Native;
 using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon;
 
-public sealed class FactorioProcess : IHostedService, IDisposable
+public sealed class FactorioProcess : RestartableBackgroundService
 {
     private readonly ILogger<FactorioProcess> logger;
     private readonly Options.Factorio options;
@@ -33,16 +32,6 @@ public sealed class FactorioProcess : IHostedService, IDisposable
     /// </remarks>
     private FactorioException? incompatibleMapVersionError = null;
 
-    /// <summary>
-    /// A cancellation token source for the currently-running factorio process.
-    /// </summary>
-    private CancellationTokenSource processCts = new();
-
-    /// <summary>
-    /// The asynchronous operation which launched the factorio process.
-    /// </summary>
-    private Task? factorioTask = null;
-
     public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
     {
         this.logger = logger;
@@ -52,90 +41,7 @@ public sealed class FactorioProcess : IHostedService, IDisposable
         this.ServerStatus = new ServerStatus();
     }
 
-    public void Dispose()
-    {
-        this.processCts.Dispose();
-        this.factorioTask?.Dispose();
-    }
-
-    /// <summary>
-    /// Start a new factorio process.
-    /// If a process is already running, this method returns immediately.
-    /// </summary>
-    /// <param name="cancellationToken">Indicates when the start process should be aborted.</param>
-    /// <returns>A task that represents the start operation. This does not include waiting for the factorio process to complete.</returns>
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        if (this.factorioTask != null)
-        {
-            // previously started
-            if (!this.factorioTask.IsCompleted)
-            {
-                // not completed, nothing to do
-                return Task.CompletedTask;
-            }
-            else
-            {
-                // completed, restart it
-                this.factorioTask.Dispose();
-                this.factorioTask = null;
-            }
-        }
-
-        this.processCts.Dispose();
-        this.processCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        this.factorioTask = StartServerAsync(this.processCts.Token);
-
-        if (this.factorioTask.IsCompleted)
-        {
-            // the task completed synchronously, bubble up its cancellation and failures
-            return this.factorioTask;
-        }
-
-        // otherwise, it's running, return a completed task
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Stops the running factorio process.
-    /// If no process is running, this method returns immediately.
-    /// This method returns when the factorio process has exited or cancellation has been requested.
-    /// </summary>
-    /// <param name="cancellationToken">Indicates when shutdown should no longer be graceful.</param>
-    /// <returns>A task that represents the stop operation, including waiting for the factorio process to exit.</returns>
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (this.factorioTask == null || this.factorioTask.IsCompleted)
-        {
-            this.factorioTask?.Dispose();
-            this.factorioTask = null;
-            return;
-        }
-
-        try
-        {
-            this.processCts.Cancel();
-        }
-        finally
-        {
-            // wait for the task to finish, or cancellationToken to trigger
-            var tcs = new TaskCompletionSource();
-            using var ctr = cancellationToken.Register(s => ((TaskCompletionSource)s!).SetCanceled(), tcs);
-            await Task.WhenAny(this.factorioTask, tcs.Task);
-        }
-    }
-
-    /// <summary>
-    /// Restarts the factorio process.
-    /// Cancelling this operation may leave the factorio process stopped.
-    /// </summary>
-    /// <param name="cancellationToken">Indicates whether the restart should be aborted.</param>
-    /// <returns>A task that represents the restart operation.</returns>
-    public async Task RestartAsync(CancellationToken cancellationToken = default)
-    {
-        await StopAsync(cancellationToken);
-        await StartAsync(cancellationToken);
-    }
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) => StartServerAsync(stoppingToken);
 
     private async Task<int> StartServerAsync(CancellationToken cancellationToken = default)
     {
@@ -256,8 +162,7 @@ public sealed class FactorioProcess : IHostedService, IDisposable
 
         this.logger.LogInformation("Setting current save to {save}", save);
         this.options.Saves.SetCurrentSavePath(new FileInfo(save.Path));
-        await this.StopAsync(cancellationToken);
-        await this.StartAsync(cancellationToken);
+        await RestartAsync(cancellationToken);
     }
 
     public async Task<bool> CreateSaveAsync(string name, MapExchangeStringData mapExchangeStringData, bool overwrite = false, CancellationToken cancellationToken = default)
@@ -276,7 +181,7 @@ public sealed class FactorioProcess : IHostedService, IDisposable
         }
 
         this.logger.LogDebug("Waiting for factorio process to exit");
-        await this.StopAsync(cancellationToken);
+        await StopAsync(cancellationToken);
 
         var factorioDirectory = await GetFactorioDirectoryAsync(cancellationToken);
         if (factorioDirectory == null)
@@ -323,7 +228,7 @@ public sealed class FactorioProcess : IHostedService, IDisposable
 
         async Task<bool> exit(bool success)
         {
-            await this.StartAsync(cancellationToken);
+            await StartAsync(cancellationToken);
             return success;
         }
     }
