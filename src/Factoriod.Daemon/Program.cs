@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Factoriod.Fetcher;
+using Factoriod.Utilities;
 using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon
@@ -24,13 +25,14 @@ namespace Factoriod.Daemon
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            builder.Services.AddHostedService<FactorioHostedService>();
+            builder.Services.AddSingletonHostedService<FactorioProcess>();
+
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
 
-            builder.Services.AddSingleton<FactorioProcess>();
-
             var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
+            var cacheDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY");
+            var stateDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY");
             if (configurationDirectory is not null)
             {
                 builder.Configuration.AddJsonFile(Path.Combine(configurationDirectory, "appsettings.json"), optional: true, reloadOnChange: true);
@@ -42,23 +44,20 @@ namespace Factoriod.Daemon
                 {
                     options.Executable = new Options.FactorioExecutable
                     {
-                        DownloadDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY")!,
+                        RootDirectory = cacheDirectory ?? string.Empty,
                     };
 
                     options.Configuration = new Options.FactorioConfiguration
                     {
-                        RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
+                        RootDirectory = Path.Combine(stateDirectory ?? string.Empty, "config", "factorio"),
                     };
 
                     options.Saves = new Options.FactorioSaves
                     {
-                        RootDirectory = Environment.GetEnvironmentVariable("STATE_DIRECTORY")!,
+                        RootDirectory = Path.Combine(stateDirectory ?? string.Empty, "saves"),
                     };
 
-                    options.MapGeneration = new Options.FactorioMapGeneration
-                    {
-                        RootDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY")!,
-                    };
+                    options.ModsRootDirectory = Path.Combine(cacheDirectory ?? string.Empty, "mods");
                 })
                 .BindConfiguration("Factorio")
                 .ValidateDataAnnotations();

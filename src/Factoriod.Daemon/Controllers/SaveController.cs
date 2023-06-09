@@ -43,7 +43,7 @@ namespace Factoriod.Daemon.Controllers
         }
 
         [HttpPut("{name}", Name = "SetSave")]
-        public ActionResult<Save> SetSave(string name)
+        public async Task<ActionResult<Save>> SetSaveAsync(string name)
         {
             var file = PathUtilities.Resolve(Path.Combine(this.options.Saves.RootDirectory, $"{name}.zip"));
             this.logger.LogDebug("Attempting to set save to {path} for a save named {save}", file, name);
@@ -54,7 +54,7 @@ namespace Factoriod.Daemon.Controllers
             }
 
             var save = new Save(file);
-            this.factorioProcess.SetSave(save);
+            await this.factorioProcess.SetSave(save);
             return AcceptedAtRoute("GetServerStatus");
         }
 

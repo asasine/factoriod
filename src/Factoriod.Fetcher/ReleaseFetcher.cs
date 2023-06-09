@@ -27,6 +27,17 @@ namespace Factoriod.Fetcher
         {
             outputDirectory.Create();
             var outputFile = new FileInfo(Path.Combine(outputDirectory.FullName, "factorio.tar.xz"));
+            if (outputFile.Directory == null)
+            {
+                this.logger.LogDebug("Output file directory does not exist, creating it");
+                outputDirectory.Create();
+                outputFile.Refresh();
+                if (outputFile.Directory == null)
+                {
+                    this.logger.LogWarning("Output file directory is still null");
+                    return null;
+                }
+            }
 
             this.logger.LogDebug("Downloading to {outputDirectory}", outputDirectory);
             var downloadUrl = GetDownloadUrl(version, distro);

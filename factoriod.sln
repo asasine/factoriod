@@ -15,9 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{41EEBA90-F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Utilities.Test", "test\Factoriod.Utilities.Test\Factoriod.Utilities.Test.csproj", "{067C57FA-7AB3-4042-94F6-2E3AAF3E3387}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Models", "src\Factoriod.Models\Factoriod.Models.csproj", "{516CDD50-778C-4BCA-A626-2E2B0DE21AA7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Models", "src\Factoriod.Models\Factoriod.Models.csproj", "{516CDD50-778C-4BCA-A626-2E2B0DE21AA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Models.Test", "test\Factoriod.Models.Test\Factoriod.Models.Test.csproj", "{E5BC4CB6-8B84-4A1D-A709-695B2957607B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Models.Test", "test\Factoriod.Models.Test\Factoriod.Models.Test.csproj", "{E5BC4CB6-8B84-4A1D-A709-695B2957607B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

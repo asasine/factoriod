@@ -30,16 +30,16 @@ A factorio daemon for Ubuntu.
     journalctl -u factoriod
 
 ## Configuration
-The daemon reads and stores configuration in _/etc/factoriod/_ directory by default.
-This can be adjusted by modifying the [src/Factoriod.Daemon/appsettings.json](src/Factoriod.Daemon/appsettings.json) file.
+The daemon reads configuration from the _/etc/factoriod/_ directory by default.
+The _/etc/factoriod/appsettings.json_ file can be modified at runtime to change the daemon's configuration.
 
 ### Systemd service
 1. [Install the daemon](#building-the-debian-package)
 1. Start the service: `sudo systemctl start factoriod`
 1. To have the service start on boot: `sudo systemctl enable factoriod`
-1. View the logs: `journalctl -u factoriod`
+1. View the logs: `journalctl -u factoriod -f`
 
 #### Directories in use
 - /var/cache/factoriod/: downloaded game binaries
-- /var/lib/factoriod/: save games
-- /etc/factoriod/: configuration files (map settings, server settings, etc.)
+- /var/lib/factoriod/: dynamic files including save games and generated configuration
+- /etc/factoriod/: static configuration files
