@@ -63,7 +63,7 @@ public class ServerController : ControllerBase
         if (restart)
         {
             this.logger.LogInformation("Restarting factorio after writing server settings.");
-            await this.factorioProcess.RestartAsync();
+            await this.factorioProcess.RestartAsync(CancellationToken.None);
         }
 
         return Ok(serverSettingsWithSecrets);
