@@ -444,13 +444,10 @@ public sealed class FactorioProcess : RestartableBackgroundService
             return savePath;
         }
 
-        if (savePath == null)
-        {
-            // choose the save which was modified most recently
-            savePath = this.options.Saves.ListSaves()
-                .AsNullable()
-                .FirstOrDefault()?.GetFileInfo();
-        }
+        // choose the save which was modified most recently
+        savePath ??= this.options.Saves.ListSaves()
+            .AsNullable()
+            .FirstOrDefault()?.GetFileInfo();
 
         if (savePath != null && savePath.Exists)
         {

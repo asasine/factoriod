@@ -4,7 +4,7 @@ public static class LinqExtensions
 {
     public static IEnumerable<T?> AsNullable<T>(this IEnumerable<T> source)
         where T : struct
-        => source.Select(value => (T?)value);
+        => source.Cast<T?>();
 
     /// <summary>
     /// Merge two dictionaries, with the left dictionary taking precedence.
