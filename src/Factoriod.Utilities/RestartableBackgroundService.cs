@@ -110,7 +110,11 @@ public abstract class RestartableBackgroundService : IHostedService, IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        this.backgroundTask?.Dispose();
+        if (this.backgroundTask != null && this.backgroundTask.IsCompleted)
+        {
+            this.backgroundTask.Dispose();
+        }
+
         this.backgroundTask = null;
         this.backgroundTaskCts?.Cancel();
         this.backgroundTaskCts = null;
