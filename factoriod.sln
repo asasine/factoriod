@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Models", "src\Fac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factoriod.Models.Test", "test\Factoriod.Models.Test\Factoriod.Models.Test.csproj", "{E5BC4CB6-8B84-4A1D-A709-695B2957607B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Factoriod.Rcon", "Factoriod.Rcon\Factoriod.Rcon.csproj", "{8BB3273E-4D7E-4FF2-90A5-C4885936B38B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,10 @@ Global
 		{E5BC4CB6-8B84-4A1D-A709-695B2957607B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5BC4CB6-8B84-4A1D-A709-695B2957607B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E5BC4CB6-8B84-4A1D-A709-695B2957607B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BB3273E-4D7E-4FF2-90A5-C4885936B38B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BB3273E-4D7E-4FF2-90A5-C4885936B38B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BB3273E-4D7E-4FF2-90A5-C4885936B38B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BB3273E-4D7E-4FF2-90A5-C4885936B38B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -60,6 +66,7 @@ Global
 		{067C57FA-7AB3-4042-94F6-2E3AAF3E3387} = {41EEBA90-F2E0-4848-A7BE-30883B935E11}
 		{516CDD50-778C-4BCA-A626-2E2B0DE21AA7} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
 		{E5BC4CB6-8B84-4A1D-A709-695B2957607B} = {41EEBA90-F2E0-4848-A7BE-30883B935E11}
+		{8BB3273E-4D7E-4FF2-90A5-C4885936B38B} = {5B435697-E3E4-494F-A1EB-D6DCC3954AA2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {23A8D5F7-A204-45D0-AB85-69BB6DFE0A41}
