@@ -14,4 +14,8 @@
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="7.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Factoriod.Utilities\Factoriod.Utilities.csproj" />
+  </ItemGroup>
+
 </Project>

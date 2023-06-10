@@ -1,5 +1,4 @@
-﻿using System.Net;
-using CoreRCON;
+﻿using CoreRCON;
 using Microsoft.Extensions.Options;
 
 namespace Factoriod.Rcon;
@@ -77,8 +76,7 @@ public sealed class RconClient : IDisposable
             throw new InvalidOperationException($"Cannot create an RCON client without a password. Please call {nameof(Configure)} first.");
         }
 
-        var ipAddress = IPAddress.Parse(rconOptions.Value.IPAddress);
-        rcon = new RCON(ipAddress, rconOptions.Value.Port, password);
+        rcon = new RCON(rconOptions.Value.IPAddress, rconOptions.Value.Port, password);
         await rcon.ConnectAsync();
         return rcon;
     }

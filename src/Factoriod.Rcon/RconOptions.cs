@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
+using Factoriod.Utilities;
 
 namespace Factoriod.Rcon;
 
@@ -11,8 +13,8 @@ public record RconOptions
     /// <summary>
     /// The IP address of the RCON server.
     /// </summary>
-    [RegularExpression(@"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")]
-    public string IPAddress { get; init; } = null!;
+    [TypeConverter(typeof(IPAddressTypeConverter))]
+    public IPAddress IPAddress { get; init; } = null!;
 
     /// <summary>
     /// The port of the RCON server.
