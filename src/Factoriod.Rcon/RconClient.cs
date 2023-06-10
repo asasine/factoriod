@@ -76,7 +76,7 @@ public sealed class RconClient : IDisposable
     public async Task<IReadOnlyDictionary<string, int>> GetItemsLaunchedAsync()
     {
         var rcon = await GetClientAsync();
-        var launches = await rcon.SendCommandAsync(@"/c local launched = {}
+        var launches = await rcon.SendCommandAsync(@"/sc local launched = {}
 for _, p in pairs(game.players) do
   for item, count in pairs(p.force.items_launched) do
     if launched[item] ~= nil then

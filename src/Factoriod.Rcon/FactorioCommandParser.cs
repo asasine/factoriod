@@ -39,5 +39,12 @@ internal static class FactorioCommandParser
     }
 
     public static IReadOnlyDictionary<string, int> ItemsLaunched(string input)
-        => JsonSerializer.Deserialize<Dictionary<string, int>>(input) ?? throw new InvalidDataException("Expected JSON mapping launched item names to the number launched.");
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return new Dictionary<string, int>();
+        }
+
+        return JsonSerializer.Deserialize<Dictionary<string, int>>(input) ?? throw new InvalidDataException("Expected JSON mapping launched item names to the number launched.");
+    }
 }
