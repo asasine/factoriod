@@ -18,6 +18,21 @@ The debian binary package is created using [quamotion/dotnet-packaging](https://
 1. Run: `dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj`
 1. Run: `sudo apt install ./src/Factoriod.Daemon/bin/Release/net6.0/linux-x64/factoriod.*.deb`
 
+It can be helpful to enable .NET development mode while running the daemon.
+1. Run: `sudo systemctl edit factoriod`
+1. Override the `DOTNET_ENVIRONMENT` environment variable by adding the following lines to the override file:
+    ```ini
+    ### Anything between here and the comment below will become the new contents of the file
+
+    [Service]
+    Environment=DOTNET_ENVIRONMENT=Development
+
+    ### Lines below this comment will be discarded
+    ```
+
+1. Save and quit the file
+1. Run: `sudo systemctl restart factoriod`
+
 ### Releasing a new version
 A new version can be released using the [.github/workflows/release.yml](.github/workflows/release.yml) workflow. This workflow will:
 1. Update the project version.
