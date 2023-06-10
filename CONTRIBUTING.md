@@ -12,6 +12,7 @@
 1. Open a terminal to the cloned repo
 1. Run: `dotnet run --project src/Factoriod.Daemon`
 
+
 ### Building the debian package
 The debian binary package is created using [quamotion/dotnet-packaging](https://github.com/quamotion/dotnet-packaging). It can be installed as a [.NET tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools).
 1. Open a terminal to the cloned repo
@@ -32,6 +33,11 @@ It can be helpful to enable .NET development mode while running the daemon.
 
 1. Save and quit the file
 1. Run: `sudo systemctl restart factoriod`
+
+### HTTP REPL
+The [ASP.NET Core HTTP REPL](https://learn.microsoft.com/aspnet/core/web-api/http-repl/) (Read-Eval-Print-Loop) is a command-line tool for interacting with HTTP services. It allows you to issue HTTP requests and inspect the responses in a terminal window. It can be used to test the daemon API.
+
+The HTTP REPL is best used with the daemon running in development mode. See the [Building the debian package](#building-the-debian-package) section for instructions on how to enable development mode.
 
 ### Releasing a new version
 A new version can be released using the [.github/workflows/release.yml](.github/workflows/release.yml) workflow. This workflow will:
