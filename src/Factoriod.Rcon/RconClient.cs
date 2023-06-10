@@ -70,6 +70,28 @@ public sealed class RconClient : IDisposable
     }
 
     /// <summary>
+    /// Gets items launched in rockets.
+    /// </summary>
+    /// <returns>A mapping of items launched to the number launched.</returns>
+    public async Task<IReadOnlyDictionary<string, int>> GetItemsLaunchedAsync()
+    {
+        var rcon = await GetClientAsync();
+        var launches = await rcon.SendCommandAsync(@"/c local launched = {}
+for _, p in pairs(game.players) do
+  for item, count in pairs(p.force.items_launched) do
+    if launched[item] ~= nil then
+      launched[item] = launched[item] + count
+    else
+      launched[item] = count
+    end
+  end
+end
+game.print(game.table_to_json(launched))");
+
+        return FactorioCommandParser.ItemsLaunched(launches);
+    }
+
+    /// <summary>
     /// Gets a connected client for the RCON server.
     /// </summary>
     /// <returns>A connected client for the RCON server.</returns>

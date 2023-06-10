@@ -23,6 +23,9 @@ public class RconController : ControllerBase
         return await players.ToListAsync();
     }
 
+    [HttpGet("launches")]
+    public async Task<IReadOnlyDictionary<string, int>> GetItemLaunchesAsync() => await rconClient.GetItemsLaunchedAsync();
+
     [HttpPost("custom")]
     public async Task<ActionResult<string>> SendCustomCommandAsync([FromBody] string command)
     {

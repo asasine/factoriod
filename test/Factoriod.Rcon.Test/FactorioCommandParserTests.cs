@@ -54,4 +54,16 @@ public class FactorioCommandParserTests
 
         Assert.ThrowsAny<InvalidDataException>(() => FactorioCommandParser.OnlinePlayers(input).ToList());
     }
+
+    [Fact]
+    public void ItemsLaunched()
+    {
+        var expected = new Dictionary<string, int>
+        {
+            { "satellites", 42 },
+        };
+
+        //const string json = "{}";
+        const string json = @"{""satellite"":1}"; // NOTE: "" in a verbatim string results in "
+    }
 }

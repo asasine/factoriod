@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Factoriod.Rcon;
 
@@ -36,4 +37,7 @@ internal static class FactorioCommandParser
             throw new InvalidDataException($"Expected to only find {numPlayers} but there are more.");
         }
     }
+
+    public static IReadOnlyDictionary<string, int> ItemsLaunched(string input)
+        => JsonSerializer.Deserialize<Dictionary<string, int>>(input) ?? throw new InvalidDataException("Expected JSON mapping launched item names to the number launched.");
 }
