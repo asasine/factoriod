@@ -27,7 +27,7 @@ namespace Factoriod.Daemon
             builder.Services.AddSwaggerGen();
 
             builder.Services.AddSingletonHostedService<FactorioProcess>();
-            builder.Services.AddRconClient("Factorio.RCON");
+            builder.Services.AddRconClient("Factorio:RCON");
 
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
