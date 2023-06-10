@@ -49,6 +49,12 @@ public sealed class RconClient : IDisposable
         rcon = null;
     }
 
+    public async Task<string> SendCustomCommandAsync(string command)
+    {
+        var rcon = await GetClientAsync();
+        return await rcon.SendCommandAsync(command);
+    }
+
     /// <summary>
     /// Lists online players.
     /// </summary>
@@ -56,7 +62,7 @@ public sealed class RconClient : IDisposable
     public async Task<string> ListOnlinePlayersAsync()
     {
         var rcon = await GetClientAsync();
-        return await rcon.SendCommandAsync("/players");
+        return await rcon.SendCommandAsync("/players online");
     }
 
     /// <summary>
