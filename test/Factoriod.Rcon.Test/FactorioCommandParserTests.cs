@@ -55,15 +55,34 @@ public class FactorioCommandParserTests
         Assert.ThrowsAny<InvalidDataException>(() => FactorioCommandParser.OnlinePlayers(input).ToList());
     }
 
-    [Fact]
-    public void ItemsLaunched()
+    public static IEnumerable<object[]> ItemsLaunchedTestCases()
     {
-        var expected = new Dictionary<string, int>
+        yield return new object[] { string.Empty, new Dictionary<string, int>() };
+        yield return new object[]
         {
-            { "satellites", 42 },
+            @"{""satellite"":1}", // NOTE: "" in a verbatim string results in "
+            new Dictionary<string, int>
+            {
+                { "satellite", 1 },
+            }
         };
 
-        //const string json = "{}";
-        const string json = @"{""satellite"":1}"; // NOTE: "" in a verbatim string results in "
+        yield return new object[]
+        {
+            @"{""satellite"":1,""raw-fish"":1}", // NOTE: "" in a verbatim string results in "
+            new Dictionary<string, int>
+            {
+                { "satellite", 1 },
+                { "raw-fish", 1 },
+            }
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(ItemsLaunchedTestCases))]
+    public void ItemsLaunched(string input, IReadOnlyDictionary<string, int> expected)
+    {
+        var actual = FactorioCommandParser.ItemsLaunched(input);
+        Assert.Equal(expected, actual);
     }
 }
