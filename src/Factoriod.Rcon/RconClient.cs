@@ -59,10 +59,14 @@ public sealed class RconClient : IDisposable
     /// Lists online players.
     /// </summary>
     /// <returns>Online players.</returns>
-    public async Task<string> ListOnlinePlayersAsync()
+    public async IAsyncEnumerable<string> ListOnlinePlayersAsync()
     {
         var rcon = await GetClientAsync();
-        return await rcon.SendCommandAsync("/players online");
+        var players = await rcon.SendCommandAsync("/players online");
+        foreach (var player in FactorioCommandParser.OnlinePlayers(players))
+        {
+            yield return player;
+        }
     }
 
     /// <summary>

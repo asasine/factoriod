@@ -19,8 +19,8 @@ public class RconController : ControllerBase
     [HttpGet("players")]
     public async Task<IEnumerable<string>> ListOnlinePlayersAsync()
     {
-        var players = await rconClient.ListOnlinePlayersAsync();
-        return new string[] { players };
+        var players = rconClient.ListOnlinePlayersAsync();
+        return await players.ToListAsync();
     }
 
     [HttpPost("custom")]
