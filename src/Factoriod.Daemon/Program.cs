@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Factoriod.Fetcher;
+using Factoriod.Rcon.Extensions.DependencyInjection;
 using Factoriod.Utilities;
 using Yoh.Text.Json.NamingPolicies;
 
@@ -26,6 +27,7 @@ namespace Factoriod.Daemon
             builder.Services.AddSwaggerGen();
 
             builder.Services.AddSingletonHostedService<FactorioProcess>();
+            builder.Services.AddRconClient("Factorio:RCON");
 
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
@@ -61,7 +63,6 @@ namespace Factoriod.Daemon
                 })
                 .BindConfiguration("Factorio")
                 .ValidateDataAnnotations();
-
 
             var app = builder.Build();
 

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <PackageId>factoriod</PackageId>
@@ -58,11 +58,13 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="7.0.0" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+    <PackageReference Include="PasswordGenerator" Version="2.1.0" />
 	<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 	<PackageReference Include="Yoh.Text.Json.NamingPolicies" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Factoriod.Rcon\Factoriod.Rcon.csproj" />
     <ProjectReference Include="..\Factoriod.Fetcher\Factoriod.Fetcher.csproj" />
     <ProjectReference Include="..\Factoriod.Models\Factoriod.Models.csproj" />
     <ProjectReference Include="..\Factoriod.Utilities\Factoriod.Utilities.csproj" />
