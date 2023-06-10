@@ -86,7 +86,7 @@ for _, p in pairs(game.players) do
     end
   end
 end
-game.print(game.table_to_json(launched))");
+rcon.print(game.table_to_json(launched))");
 
         return FactorioCommandParser.ItemsLaunched(launches);
     }
