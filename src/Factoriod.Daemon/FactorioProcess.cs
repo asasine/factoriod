@@ -7,9 +7,11 @@ using Factoriod.Daemon.Models;
 using Factoriod.Fetcher;
 using Factoriod.Models;
 using Factoriod.Models.Game;
+using Factoriod.Rcon;
 using Factoriod.Utilities;
 using Microsoft.Extensions.Options;
 using Mono.Unix.Native;
+using PasswordGenerator;
 using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon;
@@ -20,6 +22,10 @@ public sealed class FactorioProcess : RestartableBackgroundService
     private readonly Options.Factorio options;
     private readonly VersionFetcher versionFetcher;
     private readonly ReleaseFetcher releaseFetcher;
+    private readonly RconClient rconClient;
+    private readonly IOptions<RconOptions> rconOptions;
+
+    private static readonly Password RconPasswordGenerator = new(includeLowercase: true, includeUppercase: true, includeNumeric: true, includeSpecial: false, 16);
 
     public ServerStatus ServerStatus { get; init; }
 
@@ -32,12 +38,14 @@ public sealed class FactorioProcess : RestartableBackgroundService
     /// </remarks>
     private FactorioException? incompatibleMapVersionError = null;
 
-    public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher)
+    public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher, RconClient rconClient, IOptions<RconOptions> rconOptions)
     {
         this.logger = logger;
         this.options = options.Value;
         this.versionFetcher = versionFetcher;
         this.releaseFetcher = releaseFetcher;
+        this.rconClient = rconClient;
+        this.rconOptions = rconOptions;
         this.ServerStatus = new ServerStatus();
     }
 
@@ -86,6 +94,8 @@ public sealed class FactorioProcess : RestartableBackgroundService
         AddServerSettingsArguments(arguments);
         AddServerPlayerListsArguments(arguments);
         AddModsArguments(arguments);
+        var password = AddRconArguments(arguments);
+        this.rconClient.Configure(password);
 
         var saveBackup = BackupFile(savePath);
         if (saveBackup == null)
@@ -677,6 +687,22 @@ public sealed class FactorioProcess : RestartableBackgroundService
     private void AddModsArguments(List<string> arguments)
     {
         AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.GetModsRootDirectory());
+    }
+
+    /// <summary>
+    /// Adds RCON arguments to the arguments list.
+    /// </summary>
+    /// <param name="arguments">The arguments to modify.</param>
+    /// <returns>The RCON password.</returns>
+    private string AddRconArguments(List<string> arguments)
+    {
+        arguments.Add("--rcon-bind");
+        arguments.Add($"{this.rconOptions.Value.IPAddress}:{this.rconOptions.Value.Port}");
+
+        arguments.Add("--rcon-password");
+        var password = RconPasswordGenerator.Next();
+        arguments.Add(password);
+        return password;
     }
 
     private static bool AddArgumentIfFileExists(List<string> arguments, string option, FileInfo? path)
