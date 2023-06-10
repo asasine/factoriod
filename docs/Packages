@@ -94,3 +94,19 @@ Priority: optional
 Homepage: https://github.com/asasine/factoriod
 Description: A factorio daemon for Ubuntu
 
+Package: factoriod
+Version: 0.1.9
+Architecture: amd64
+Maintainer: asasine
+Installed-Size: 15527
+Depends: dotnet-runtime-6.0
+Filename: ./factoriod.0.1.9.deb
+Size: 2880056
+MD5sum: bc966407cd9acde44e2b1a40d7fa7628
+SHA1: 7b127e8506bae88101d77e412d95ddc392f8994b
+SHA256: 3962eba1c04d9e2b6d2a7aca1e6d0c6d12c3fe5bb16f54037a80e92af6307df9
+Section: games
+Priority: optional
+Homepage: https://github.com/asasine/factoriod
+Description: A factorio daemon for Ubuntu
+
