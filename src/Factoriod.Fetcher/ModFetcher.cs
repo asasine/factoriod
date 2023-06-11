@@ -85,7 +85,7 @@ public class ModFetcher
         }
 
         modListMods.RemoveAll(modListMod => modListMod.Name == mod.Name);
-        modListMods.Add(new ModListMod(mod.Name, true));
+        modListMods.Add(new ModListMod(mod.Name, true, modRelease.Version));
         modListMods.Sort();
 
         // create or overwrite

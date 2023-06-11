@@ -53,4 +53,23 @@ public class ModsController : ControllerBase
         var success = await this.modFetcher.DownloadLatestAsync(new Mod(mod.Name), this.factorioOptions.Value.Configuration.GetModListPath(), this.factorioOptions.Value.GetModsRootDirectory(), authentication);
         return success ? Ok() : throw new Exception($"Failed to download mod {mod.Name}");
     }
+
+    [HttpDelete("{name}")]
+    public async Task DeleteModAsync([FromRoute] string name)
+    {
+        this.logger.LogTrace("Deleting {mod}", name);
+        var modListPath = this.factorioOptions.Value.Configuration.GetModListPath();
+        var mods = await ModList.DeserialzeFromAsync(modListPath) ?? throw new Exception("Unable to read mod list file.");
+
+        // disable the mod by setting it to disabled in the mod list and by deleting the zip from the mods cache directory if it exists
+        mods = mods.WithDisabled(name);
+        await mods.SerializeToAsync(modListPath);
+
+        var modsCacheDirectory = this.factorioOptions.Value.GetModsRootDirectory();
+        foreach (var modFsi in modsCacheDirectory.EnumerateFileSystemInfos($"{name}_*.zip"))
+        {
+            this.logger.LogTrace("Found downloaded mod {path}, deleting.", modFsi.FullName);
+            modFsi.Delete();
+        }
+    }
 }

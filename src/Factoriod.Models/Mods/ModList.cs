@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Factoriod.Utilities;
 using Yoh.Text.Json.NamingPolicies;
 
@@ -14,6 +15,7 @@ public record ModList(IReadOnlyCollection<ModListMod>? Mods = null)
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicies.SnakeCaseLower,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     /// <summary>
@@ -37,4 +39,6 @@ public record ModList(IReadOnlyCollection<ModListMod>? Mods = null)
         using var stream = source.OpenRead();
         return await JsonSerializer.DeserializeAsync<ModList>(stream, JsonSerializerOptions, cancellationToken);
     }
+
+    public ModList WithDisabled(params string[] names) => new(Mods.WithDisabled(names).ToList());
 }
