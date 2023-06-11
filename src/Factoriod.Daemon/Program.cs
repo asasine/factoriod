@@ -70,7 +70,11 @@ namespace Factoriod.Daemon
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("./openapi", "v1");
+                    options.RoutePrefix = string.Empty;
+                });
             }
 
             app.UseAuthorization();
