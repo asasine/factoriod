@@ -31,7 +31,7 @@ public class ModFetcher
         this.httpClient = httpClient;
     }
 
-    public async Task<bool> DownloadLatestAsync(Mod mod, DirectoryInfo downloadDirectory, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
+    public async Task<bool> DownloadLatestAsync(Mod mod, FileInfo modListJson, DirectoryInfo downloadDirectory, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
     {
         var modReleases = await ListReleasesAsync(mod, authentication, cancellationToken);
         if (modReleases == null)
@@ -53,7 +53,6 @@ public class ModFetcher
             return false;
         }
 
-        var modListJson = new FileInfo(Path.Combine(downloadDirectory.FullName, "mod-list.json"));
         await DownloadAsync(mod, latestModRelease, downloadDirectory, modListJson, authentication, cancellationToken);
         return true;
     }

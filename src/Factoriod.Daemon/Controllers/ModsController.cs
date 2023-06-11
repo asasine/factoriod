@@ -50,7 +50,7 @@ public class ModsController : ControllerBase
             return BadRequest("Use DELETE to disable mods.");
         }
 
-        var success = await this.modFetcher.DownloadLatestAsync(new Mod(mod.Name), this.factorioOptions.Value.GetModsRootDirectory(), authentication);
+        var success = await this.modFetcher.DownloadLatestAsync(new Mod(mod.Name), this.factorioOptions.Value.Configuration.GetModListPath(), this.factorioOptions.Value.GetModsRootDirectory(), authentication);
         return success ? Ok() : throw new Exception($"Failed to download mod {mod.Name}");
     }
 }
