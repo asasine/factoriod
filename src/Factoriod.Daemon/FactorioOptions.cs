@@ -13,6 +13,9 @@ namespace Factoriod.Daemon.Options
 
         public DirectoryInfo GetModsRootDirectory()
             => new DirectoryInfo(this.ModsRootDirectory).Resolve();
+
+        public FileInfo GetModListJsonFile()
+            => new(Path.Combine(GetModsRootDirectory().FullName, "mod-list.json"));
     }
 
     public sealed class FactorioExecutable
