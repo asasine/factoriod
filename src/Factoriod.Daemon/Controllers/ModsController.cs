@@ -11,16 +11,19 @@ namespace Factoriod.Daemon.Controllers;
 public class ModsController : ControllerBase
 {
     private readonly IOptions<Factorio> factorioOptions;
+    private readonly ILogger logger;
 
-    public ModsController(IOptions<Factorio> factorioOptions)
+    public ModsController(IOptions<Factorio> factorioOptions, ILogger<ModsController> logger)
     {
         this.factorioOptions = factorioOptions;
+        this.logger = logger;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<string>>> ListModsAsync()
     {
         var modListJson = this.factorioOptions.Value.GetModListJsonFile();
+        this.logger.LogTrace("Listing mods in {file}", modListJson.FullName);
         if (!modListJson.Exists)
         {
             return Ok(Enumerable.Empty<string>());
