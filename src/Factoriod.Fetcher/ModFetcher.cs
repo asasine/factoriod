@@ -113,6 +113,7 @@ public class ModFetcher
     /// <returns>A task taht completes when the mod has been downloaded.</returns>
     private async Task DownloadModAsync(ModRelease modRelease, DirectoryInfo downloadDirectory, FactorioAuthentication authentication, CancellationToken cancellationToken)
     {
+        downloadDirectory.Create();
         var fullDownloadUrl = CreateDownloadUrl(modRelease, authentication);
 
         using var response = await httpClient.GetAsync(fullDownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
