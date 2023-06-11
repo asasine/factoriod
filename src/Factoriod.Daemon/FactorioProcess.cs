@@ -723,6 +723,15 @@ public sealed class FactorioProcess : RestartableBackgroundService
             modListJson.Refresh();
         }
 
+
+        var requestedMods = mods.Mods
+            .Select(mod => mod.Name)
+            .Where(name => name != "base")
+            .ToList();
+
+        this.logger.LogTrace("Requested mods: [{mods}]", string.Join(", ", requestedMods));
+
+
         var modsRootDirectory = this.options.GetModsRootDirectory();
         modsRootDirectory.Create();
         modsRootDirectory.Refresh();
@@ -740,11 +749,6 @@ public sealed class FactorioProcess : RestartableBackgroundService
                 var parts = name.Split('_');
                 return string.Join('_', parts.Take(parts.Length - 1));
             })
-            .ToList();
-
-        var requestedMods = mods.Mods
-            .Select(mod => mod.Name)
-            .Where(name => name != "base")
             .ToList();
 
         var missingMods = requestedMods.Except(downloadedMods);
