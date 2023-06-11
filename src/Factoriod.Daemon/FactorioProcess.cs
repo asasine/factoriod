@@ -732,7 +732,7 @@ public sealed class FactorioProcess : RestartableBackgroundService
         AddArgumentIfDirectoryExists(arguments, "--mod-directory", modsRootDirectory);
 
         // ensure all mods are downloaded
-        var downloadedMods = modsRootDirectory.EnumerateFileSystemInfos()
+        var downloadedMods = modsRootDirectory.EnumerateFileSystemInfos("*.zip")
             .Select(fsi => fsi.Name)
             .Select(name =>
             {
@@ -740,6 +740,7 @@ public sealed class FactorioProcess : RestartableBackgroundService
                 var parts = name.Split('_');
                 return string.Join('_', parts.Take(parts.Length - 1));
             })
+            .Where(name => !string.IsNullOrWhiteSpace(name))
             .ToList();
 
         var requestedMods = mods.Mods
