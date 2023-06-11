@@ -749,7 +749,7 @@ public sealed class FactorioProcess : RestartableBackgroundService
 
         var missingMods = requestedMods.Except(downloadedMods);
         this.logger.LogTrace(
-            "Missing mods: [{missing}]; downlaoded: [{downloaded}]; requested: [{requested}]",
+            "Missing mods: [{missing}]; downloaded: [{downloaded}]; requested: [{requested}]",
             string.Join(", ", missingMods),
             string.Join(", ", downloadedMods),
             string.Join(", ", requestedMods));
