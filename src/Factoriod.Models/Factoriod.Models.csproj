@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Yoh.Text.Json.NamingPolicies" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Factoriod.Utilities\Factoriod.Utilities.csproj" />
   </ItemGroup>
 

@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Factoriod.Daemon.Options;
+﻿using Factoriod.Daemon.Options;
 using Factoriod.Fetcher;
 using Factoriod.Models.Mods;
 using Microsoft.AspNetCore.Mvc;
@@ -25,19 +24,18 @@ public class ModsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<string>>> ListModsAsync()
     {
-        var modListJson = this.factorioOptions.Value.GetModListJsonFile();
+        var modListJson = this.factorioOptions.Value.Configuration.GetModListPath();
         this.logger.LogTrace("Listing mods in {file}", modListJson.FullName);
         if (!modListJson.Exists)
         {
             return Ok(Enumerable.Empty<string>());
         }
 
-        using var modListJsonFileStream = modListJson.OpenRead();
-        var mods = await JsonSerializer.DeserializeAsync<ModList>(modListJsonFileStream) ?? throw new Exception("Unable to read mod list file.");
-
+        var mods = await ModList.DeserialzeFromAsync(modListJson) ?? throw new Exception("Unable to read mod list file.");
         var enabledModNames = mods
             .Mods
             .Where(mod => mod.Enabled)
+            .Where(mod => mod.Name != "base")
             .Select(mod => mod.Name);
 
         return Ok(enabledModNames);

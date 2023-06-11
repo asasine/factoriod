@@ -7,6 +7,7 @@ using Factoriod.Daemon.Models;
 using Factoriod.Fetcher;
 using Factoriod.Models;
 using Factoriod.Models.Game;
+using Factoriod.Models.Mods;
 using Factoriod.Rcon;
 using Factoriod.Utilities;
 using Microsoft.Extensions.Options;
@@ -93,9 +94,8 @@ public sealed class FactorioProcess : RestartableBackgroundService
 
         AddServerSettingsArguments(arguments);
         AddServerPlayerListsArguments(arguments);
-        AddModsArguments(arguments);
-        var password = AddRconArguments(arguments);
-        this.rconClient.Configure(password);
+        ConfigureRcon(arguments);
+        await ConfigureModsAsync(arguments, cancellationToken);
 
         var saveBackup = BackupFile(savePath);
         if (saveBackup == null)
@@ -684,17 +684,12 @@ public sealed class FactorioProcess : RestartableBackgroundService
         arguments.Add(adminlist.FullName);
     }
 
-    private void AddModsArguments(List<string> arguments)
-    {
-        AddArgumentIfDirectoryExists(arguments, "--mod-directory", this.options.GetModsRootDirectory());
-    }
-
     /// <summary>
     /// Adds RCON arguments to the arguments list.
     /// </summary>
-    /// <param name="arguments">The arguments to modify.</param>
+    /// <param name="arguments">The factorio executable arguments to modify.</param>
     /// <returns>The RCON password.</returns>
-    private string AddRconArguments(List<string> arguments)
+    private void ConfigureRcon(List<string> arguments)
     {
         arguments.Add("--rcon-bind");
         arguments.Add($"{this.rconOptions.Value.IPAddress}:{this.rconOptions.Value.Port}");
@@ -702,7 +697,58 @@ public sealed class FactorioProcess : RestartableBackgroundService
         arguments.Add("--rcon-password");
         var password = RconPasswordGenerator.Next();
         arguments.Add(password);
-        return password;
+
+        this.rconClient.Configure(password);
+    }
+
+    /// <summary>
+    /// Configures mods by copying the mod list from the configuration directory into the factorio mods directory
+    /// </summary>
+    /// <param name="arguments">The factorio executable arguments to modify.</param>
+    /// <returns>A task that completes when mods are configured.</returns>
+    private async Task ConfigureModsAsync(List<string> arguments, CancellationToken cancellationToken)
+    {
+        // copy mod list to mods root directory
+        var modListJson = this.options.Configuration.GetModListPath();
+        ModList? mods = null;
+        if (modListJson.Exists)
+        {
+            mods = await ModList.DeserialzeFromAsync(modListJson, cancellationToken);
+        }
+
+        if (mods == null)
+        {
+            mods = new ModList(new ModListMod[] { new ModListMod("base", true) });
+            await mods.SerializeToAsync(modListJson, cancellationToken);
+            modListJson.Refresh();
+        }
+
+        var modsRootDirectory = this.options.GetModsRootDirectory();
+        modListJson.CopyTo(Path.Combine(modsRootDirectory.FullName, "mod-list.json"), overwrite: true);
+        AddArgumentIfDirectoryExists(arguments, "--mod-directory", modsRootDirectory);
+
+        // ensure all mods are downloaded
+        var downloadedMods = modsRootDirectory.EnumerateFileSystemInfos()
+            .Select(fsi => fsi.Name)
+            .Select(name =>
+            {
+                // name: some-mod_maybe_underscores_Major.Minor.Patch.zip
+                var parts = name.Split('_');
+                return string.Join('_', parts.Take(parts.Length - 1));
+            })
+            .ToList();
+
+        var requestedMods = mods.Mods
+            .Select(mod => mod.Name)
+            .Where(name => name != "base")
+            .ToList();
+
+        var missingMods = requestedMods.Except(downloadedMods);
+        this.logger.LogTrace(
+            "Missing mods: [{missing}]; downlaoded: [{downloaded}]; requested: [{requested}]",
+            string.Join(", ", missingMods),
+            string.Join(", ", downloadedMods),
+            string.Join(", ", requestedMods));
     }
 
     private static bool AddArgumentIfFileExists(List<string> arguments, string option, FileInfo? path)

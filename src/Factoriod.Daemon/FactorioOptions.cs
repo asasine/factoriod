@@ -13,9 +13,6 @@ namespace Factoriod.Daemon.Options
 
         public DirectoryInfo GetModsRootDirectory()
             => new DirectoryInfo(this.ModsRootDirectory).Resolve();
-
-        public FileInfo GetModListJsonFile()
-            => new(Path.Combine(GetModsRootDirectory().FullName, "mod-list.json"));
     }
 
     public sealed class FactorioExecutable
@@ -49,6 +46,7 @@ namespace Factoriod.Daemon.Options
         public string ServerWhitelistPath { get; set; } = null!;
         public string ServerBanlistPath { get; set; } = null!;
         public string ServerAdminlistPath { get; set; } = null!;
+        public string ModListPath { get; set; } = null!;
 
         public FileInfo GetServerSettingsPath()
             => new FileInfo(Path.Combine(this.RootDirectory, this.ServerSettingsPath)).Resolve();
@@ -61,6 +59,9 @@ namespace Factoriod.Daemon.Options
 
         public FileInfo GetServerAdminlistPath()
             => new FileInfo(Path.Combine(this.RootDirectory, this.ServerAdminlistPath)).Resolve();
+
+        public FileInfo GetModListPath()
+            => new FileInfo(Path.Combine(this.RootDirectory, this.ModListPath)).Resolve();
     }
 
     public sealed class FactorioSaves

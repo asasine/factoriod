@@ -60,7 +60,7 @@ namespace Factoriod.Daemon
                         RootDirectory = Path.Combine(stateDirectory ?? string.Empty, "saves"),
                     };
 
-                    options.ModsRootDirectory = Path.Combine(stateDirectory ?? string.Empty, "mods");
+                    options.ModsRootDirectory = Path.Combine(cacheDirectory ?? string.Empty, "mods");
                 })
                 .BindConfiguration("Factorio")
                 .ValidateDataAnnotations();
