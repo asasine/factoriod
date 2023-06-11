@@ -31,6 +31,7 @@ namespace Factoriod.Daemon
 
             builder.Services.AddHttpClient<VersionFetcher>();
             builder.Services.AddHttpClient<ReleaseFetcher>();
+            builder.Services.AddHttpClient<ModFetcher>();
 
             var configurationDirectory = Environment.GetEnvironmentVariable("CONFIGURATION_DIRECTORY");
             var cacheDirectory = Environment.GetEnvironmentVariable("CACHE_DIRECTORY");
