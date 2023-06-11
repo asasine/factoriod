@@ -87,7 +87,7 @@ public class ModFetcher
 
         modListMods.RemoveAll(modListMod => modListMod.Name == mod.Name);
         modListMods.Add(new ModListMod(mod.Name, true));
-        modListMods.Sort((lhs, rhs) => StringComparer.OrdinalIgnoreCase.Compare(lhs, rhs));
+        modListMods.Sort();
 
         // create or overwrite
         using (var modListJsonFileStream = modListJson.Open(FileMode.Create))
