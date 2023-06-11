@@ -724,7 +724,9 @@ public sealed class FactorioProcess : RestartableBackgroundService
         }
 
         var modsRootDirectory = this.options.GetModsRootDirectory();
-        modListJson.CopyTo(Path.Combine(modsRootDirectory.FullName, "mod-list.json"), overwrite: true);
+        var runtimeModListJsonPath = Path.Combine(modsRootDirectory.FullName, "mod-list.json");
+        this.logger.LogTrace("Copying mod list from {source} to {destination}", modListJson.FullName, runtimeModListJsonPath);
+        modListJson.CopyTo(runtimeModListJsonPath, overwrite: true);
         AddArgumentIfDirectoryExists(arguments, "--mod-directory", modsRootDirectory);
 
         // ensure all mods are downloaded
