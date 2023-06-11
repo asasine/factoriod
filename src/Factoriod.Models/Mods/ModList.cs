@@ -8,7 +8,7 @@ namespace Factoriod.Models.Mods;
 /// The contents of a mod-list.json file.
 /// </summary>
 /// <param name="Mods">The mods.</param>
-public record ModList(IReadOnlyCollection<ModListMod> Mods)
+public record ModList(IReadOnlyCollection<ModListMod>? Mods = null)
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
@@ -19,7 +19,7 @@ public record ModList(IReadOnlyCollection<ModListMod> Mods)
     /// <summary>
     /// The mods.
     /// </summary>
-    public IReadOnlyCollection<ModListMod> Mods { get; } = new PrintableReadOnlyCollection<ModListMod>(Mods);
+    public IReadOnlyCollection<ModListMod> Mods { get; } =  new PrintableReadOnlyCollection<ModListMod>(Mods ?? new ModListMod[] { new ModListMod("base", true) });
 
     public async Task SerializeToAsync(FileInfo destination, CancellationToken cancellationToken = default)
     {
