@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Factoriod.Models;
 using Factoriod.Models.Game;
 using Factoriod.Utilities;
+using Yoh.Text.Json.NamingPolicies;
 
 namespace Factoriod.Daemon.Options
 {
@@ -81,8 +83,13 @@ namespace Factoriod.Daemon.Options
                 return null;
             }
 
+            JsonSerializerOptions jsonSerializerOptions = new()
+            {
+                PropertyNamingPolicy = JsonNamingPolicies.SnakeCaseLower,
+            };
+
             using var serverSettingsStream = serverSettingsPath.OpenRead();
-            var serverSettings = await JsonSerializer.DeserializeAsync<TServerSettings>(serverSettingsStream, cancellationToken: cancellationToken)
+            var serverSettings = await JsonSerializer.DeserializeAsync<TServerSettings>(serverSettingsStream, jsonSerializerOptions, cancellationToken)
                 ?? throw new InvalidOperationException($"Failed to deserialize {serverSettingsPath}");
 
             return serverSettings;
