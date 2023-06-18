@@ -66,12 +66,14 @@ namespace Factoriod.Daemon.Options
             => new FileInfo(Path.Combine(this.RootDirectory, this.ModListPath)).Resolve();
 
         /// <summary>
-        /// Reads and deserializes <see cref="ServerSettingsPath"/> into a <see cref="ServerSettingsWithSecrets"/>.
+        /// Reads and deserializes <see cref="ServerSettingsPath"/> into a <typeparamref name="TServerSettings"/>.
         /// </summary>
+        /// <typeparam name="TServerSettings">The type to deserialize, which may be derived from <see cref="ServerSettings"/>.</typeparam>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
-        /// <returns>A <see cref="ServerSettingsWithSecrets"/> or <see langword="null"/> if the file does not exist.</returns>
+        /// <returns>An instance of <typeparamref name="TServerSettings"/>, or <see langword="null"/> if the file does not exist.</returns>
         /// <exception cref="InvalidOperationException">If the file cannot be deserialized.</exception>
-        public async Task<ServerSettingsWithSecrets?> GetServerSettingsWithSecretsAsync(CancellationToken cancellationToken = default)
+        public async Task<TServerSettings?> GetServerSettingsAsync<TServerSettings>(CancellationToken cancellationToken = default)
+            where TServerSettings : ServerSettings
         {
             var serverSettingsPath = GetServerSettingsPath();
             if (!serverSettingsPath.Exists)
@@ -80,7 +82,7 @@ namespace Factoriod.Daemon.Options
             }
 
             using var serverSettingsStream = serverSettingsPath.OpenRead();
-            var serverSettings = await JsonSerializer.DeserializeAsync<ServerSettingsWithSecrets>(serverSettingsStream, cancellationToken: cancellationToken)
+            var serverSettings = await JsonSerializer.DeserializeAsync<TServerSettings>(serverSettingsStream, cancellationToken: cancellationToken)
                 ?? throw new InvalidOperationException($"Failed to deserialize {serverSettingsPath}");
 
             return serverSettings;

@@ -69,8 +69,6 @@ public record ServerSettings(
     public uint? MaxUploadSlots { get; } = MaxUploadSlots ?? 5;
     public uint? MinimumLatencyInTicks { get; } = MinimumLatencyInTicks ?? 0;
     public uint? AfkAutokickInterval { get; } = AfkAutokickInterval ?? 0;
-
-    public ServerSettings Copy() => (ServerSettings)MemberwiseClone();
 }
 
 /// <summary>

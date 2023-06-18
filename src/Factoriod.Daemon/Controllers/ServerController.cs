@@ -29,17 +29,14 @@ public class ServerController : ControllerBase
     [HttpGet("settings", Name = "GetServerSettings")]
     public async Task<ActionResult<ServerSettings>> GetServerSettings()
     {
-        var serverSettingsWithSecrets = await this.options.Value.Configuration.GetServerSettingsWithSecretsAsync();
-        if (serverSettingsWithSecrets == null)
+        var serverSettings = await this.options.Value.Configuration.GetServerSettingsAsync<ServerSettings>();
+        if (serverSettings == null)
         {
             this.logger.LogDebug("Server settings file {path} does not exist.", this.options.Value.Configuration.GetServerSettingsPath().FullName);
             return Ok(new ServerSettings());
         }
 
-        // create a ServerSettings with no mutations to drop all inherited properties in ServerSettingsWithSecrets
-        // a simple cast is insufficient
-        ServerSettings ss = ((ServerSettings)serverSettingsWithSecrets).Copy();
-        return Ok(ss);
+        return Ok(serverSettings);
     }
 
     [HttpPost("settings", Name = "UpdateServerSettings")]
