@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Factoriod.Models.Mods;
 using Factoriod.Utilities;
 
@@ -84,6 +85,7 @@ public record ServerSettingsWithSecrets(
     string GamePassword = ""
 ) : ServerSettings
 {
+    [JsonIgnore]
     public FactorioAuthentication? Authentication => (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Token)) ? null : new(Username, Token);
 }
 
