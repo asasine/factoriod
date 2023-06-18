@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Factoriod.Utilities;
 
@@ -13,6 +15,12 @@ public abstract class RestartableBackgroundService : IHostedService, IDisposable
     /// The asynchronous operation which launched the factorio process.
     /// </summary>
     private Task? backgroundTask = null;
+    private readonly ILogger logger;
+
+    protected RestartableBackgroundService(ILogger? logger = null)
+    {
+        this.logger = logger ?? NullLogger.Instance;
+    }
 
     /// <summary>
     /// Called by <see cref="StartAsync(CancellationToken)"/>.
@@ -58,7 +66,13 @@ public abstract class RestartableBackgroundService : IHostedService, IDisposable
 
         this.backgroundTaskCts?.Dispose();
         this.backgroundTaskCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        this.backgroundTask = ExecuteAsync(this.backgroundTaskCts.Token);
+        this.backgroundTask = ExecuteAsync(this.backgroundTaskCts.Token).ContinueWith(task =>
+        {
+            if (task.IsFaulted)
+            {
+                this.logger.LogWarning("Background task exited unsuccessfully", task.Exception);
+            }
+        }, cancellationToken);
 
         if (this.backgroundTask.IsCompleted)
         {

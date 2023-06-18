@@ -39,7 +39,15 @@ public sealed class FactorioProcess : RestartableBackgroundService
     /// </remarks>
     private FactorioException? incompatibleMapVersionError = null;
 
-    public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher, RconClient rconClient, IOptions<RconOptions> rconOptions, ModFetcher modFetcher)
+    public FactorioProcess(
+        ILogger<FactorioProcess> logger,
+        IOptions<Options.Factorio> options,
+        VersionFetcher versionFetcher,
+        ReleaseFetcher releaseFetcher,
+        RconClient rconClient,
+        IOptions<RconOptions> rconOptions,
+        ModFetcher modFetcher)
+        : base(logger)
     {
         this.logger = logger;
         this.options = options.Value;
