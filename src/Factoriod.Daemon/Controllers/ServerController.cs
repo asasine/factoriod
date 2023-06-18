@@ -65,4 +65,7 @@ public class ServerController : ControllerBase
 
         return Ok(serverSettingsWithSecrets);
     }
+
+    [HttpPost("restart")]
+    public async Task RestartServerAsync() => await factorioProcess.RestartAsync(CancellationToken.None);
 }
