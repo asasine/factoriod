@@ -38,7 +38,7 @@ public class ServerController : ControllerBase
 
         // create a ServerSettings with no mutations to drop all inherited properties in ServerSettingsWithSecrets
         // a simple cast is insufficient
-        ServerSettings ss = ((ServerSettings)serverSettingsWithSecrets) with { };
+        ServerSettings ss = ((ServerSettings)serverSettingsWithSecrets).Copy();
         return Ok(ss);
     }
 

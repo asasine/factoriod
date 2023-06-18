@@ -70,6 +70,7 @@ public record ServerSettings(
     public uint? MinimumLatencyInTicks { get; } = MinimumLatencyInTicks ?? 0;
     public uint? AfkAutokickInterval { get; } = AfkAutokickInterval ?? 0;
 
+    public ServerSettings Copy() => (ServerSettings)MemberwiseClone();
 }
 
 /// <summary>
