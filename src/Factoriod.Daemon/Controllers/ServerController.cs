@@ -29,17 +29,17 @@ public class ServerController : ControllerBase
     [HttpGet("settings", Name = "GetServerSettings")]
     public async Task<ActionResult<ServerSettings>> GetServerSettings()
     {
-        var serverSettingsPath = this.options.Value.Configuration.GetServerSettingsPath();
-        if (!serverSettingsPath.Exists)
+        var serverSettingsWithSecrets = await this.options.Value.Configuration.GetServerSettingsWithSecretsAsync();
+        if (serverSettingsWithSecrets == null)
         {
-            this.logger.LogDebug("Server settings file {path} does not exist.", serverSettingsPath.FullName);
+            this.logger.LogDebug("Server settings file {path} does not exist.", this.options.Value.Configuration.GetServerSettingsPath().FullName);
             return Ok(new ServerSettings());
         }
 
-        this.logger.LogTrace("Reading server settings file {path}.", serverSettingsPath.FullName);
-        using var serverSettingsStream = serverSettingsPath.OpenRead();
-        var serverSettings = await JsonSerializer.DeserializeAsync<ServerSettings>(serverSettingsStream) ?? throw new InvalidOperationException($"Failed to deserialize {serverSettingsPath}");
-        return Ok(serverSettings);
+        // create a ServerSettings with no mutations to drop all inherited properties in ServerSettingsWithSecrets
+        // a simple cast is insufficient
+        ServerSettings ss = ((ServerSettings)serverSettingsWithSecrets) with { };
+        return Ok(ss);
     }
 
     [HttpPost("settings", Name = "UpdateServerSettings")]

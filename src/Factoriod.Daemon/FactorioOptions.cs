@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Factoriod.Models;
+using Factoriod.Models.Game;
 using Factoriod.Utilities;
 
 namespace Factoriod.Daemon.Options
@@ -62,6 +64,27 @@ namespace Factoriod.Daemon.Options
 
         public FileInfo GetModListPath()
             => new FileInfo(Path.Combine(this.RootDirectory, this.ModListPath)).Resolve();
+
+        /// <summary>
+        /// Reads and deserializes <see cref="ServerSettingsPath"/> into a <see cref="ServerSettingsWithSecrets"/>.
+        /// </summary>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A <see cref="ServerSettingsWithSecrets"/> or <see langword="null"/> if the file does not exist.</returns>
+        /// <exception cref="InvalidOperationException">If the file cannot be deserialized.</exception>
+        public async Task<ServerSettingsWithSecrets?> GetServerSettingsWithSecretsAsync(CancellationToken cancellationToken = default)
+        {
+            var serverSettingsPath = GetServerSettingsPath();
+            if (!serverSettingsPath.Exists)
+            {
+                return null;
+            }
+
+            using var serverSettingsStream = serverSettingsPath.OpenRead();
+            var serverSettings = await JsonSerializer.DeserializeAsync<ServerSettingsWithSecrets>(serverSettingsStream, cancellationToken: cancellationToken)
+                ?? throw new InvalidOperationException($"Failed to deserialize {serverSettingsPath}");
+
+            return serverSettings;
+        }
     }
 
     public sealed class FactorioSaves
