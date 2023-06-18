@@ -99,18 +99,7 @@ public class ModFetcher
     /// <returns>A task that completes when <paramref name="modListJson"/> is updated.</returns>
     private static async Task UpdateModListAsync(IReadOnlyCollection<(Mod mod, ModRelease modRelease)> mods, FileInfo modListJson, CancellationToken cancellationToken)
     {
-        List<ModListMod> modListMods;
-        if (modListJson.Exists)
-        {
-            using var modListJsonFileStream = modListJson.OpenRead();
-            var modList = await JsonSerializer.DeserializeAsync<ModList>(modListJsonFileStream, JsonSerializerOptions, cancellationToken);
-            modListMods = modList?.Mods.ToList() ?? new List<ModListMod>();
-        }
-        else
-        {
-            modListMods = new List<ModListMod>();
-        }
-
+        var modListMods = (await ModList.DeserialzeFromAsync(modListJson, cancellationToken))?.Mods.ToList() ?? new List<ModListMod>();
         var modsToUpdate = mods.Select(mod => new ModListMod(mod.mod.Name, true, mod.modRelease.Version)).ToHashSet();
         modListMods.RemoveAll(modListMod => modsToUpdate.Contains(modListMod));
         modListMods.AddRange(modsToUpdate);

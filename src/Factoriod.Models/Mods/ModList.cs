@@ -36,6 +36,11 @@ public record ModList(IReadOnlyCollection<ModListMod>? Mods = null)
             return null;
         }
 
+        if (source.Length == 0)
+        {
+            return new ModList();
+        }
+
         using var stream = source.OpenRead();
         return await JsonSerializer.DeserializeAsync<ModList>(stream, JsonSerializerOptions, cancellationToken);
     }
