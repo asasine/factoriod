@@ -70,7 +70,7 @@ public abstract class RestartableBackgroundService : IHostedService, IDisposable
         {
             if (task.IsFaulted)
             {
-                this.logger.LogWarning("Background task exited unsuccessfully", task.Exception);
+                this.logger.LogWarning(task.Exception, "Background task exited unsuccessfully");
             }
         }, cancellationToken);
 
