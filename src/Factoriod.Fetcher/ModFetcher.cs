@@ -33,28 +33,41 @@ public class ModFetcher
 
     public async Task<bool> DownloadLatestAsync(Mod mod, FileInfo modListJson, DirectoryInfo downloadDirectory, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
     {
-        var modReleases = await ListReleasesAsync(mod, authentication, cancellationToken);
-        if (modReleases == null)
-        {
-            this.logger.LogInformation("Unable to list releases for {mod}", mod);
-            return false;
-        }
-
-        if (modReleases.Count == 0)
-        {
-            this.logger.LogInformation("Did not find any releases for {mod}", mod);
-            return false;
-        }
-
-        var latestModRelease = modReleases.MaxBy(modRelease => modRelease.ReleasedAt);
+        var latestModRelease = await GetLatestReleaseAsync(mod, authentication, cancellationToken);
         if (latestModRelease == null)
         {
-            this.logger.LogInformation("Unable to find latest release for {mod} with {count} releases", mod, modReleases.Count);
+            this.logger.LogWarning("Unable to find latest release for {mod}", mod);
             return false;
         }
 
         await DownloadAsync(mod, latestModRelease, downloadDirectory, modListJson, authentication, cancellationToken);
         return true;
+    }
+
+    /// <summary>
+    /// Downloads all mods in <paramref name="mods"/> to <paramref name="downloadDirectory"/> and updates <paramref name="modListJson"/>.
+    /// </summary>
+    /// <param name="mods">The mods to download.</param>
+    /// <param name="modListJson">The file to update with the new mods.</param>
+    /// <param name="downloadDirectory">The directory to download to.</param>
+    /// <param name="authentication">Authentication parameters for downloading.</param>
+    /// <param name="cancellationToken">A token to cancel the download operation.</param>
+    /// <returns>A task that completes when all <paramref name="mods"/> have been downloaded and <paramref name="modListJson"/> has been updated.</returns>
+    public async Task BatchDownloadLatestAsync(IEnumerable<Mod> mods, FileInfo modListJson, DirectoryInfo downloadDirectory, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
+    {
+        // TODO: limit batch size and concurrency
+        var batch = mods.Select(downloadLatestAsync).ToList();
+        var modReleases = await Task.WhenAll(batch);
+        await UpdateModListAsync(modReleases, modListJson, cancellationToken);
+
+        async Task<(Mod mod, ModRelease modRelease)> downloadLatestAsync(Mod mod)
+        {
+            var latestRelease = await GetLatestReleaseAsync(mod, authentication, cancellationToken)
+                ?? throw new InvalidOperationException($"Unable to find latest release for {mod}");
+
+            await DownloadModAsync(latestRelease, downloadDirectory, authentication, cancellationToken);
+            return (mod, latestRelease);
+        }
     }
 
     /// <summary>
@@ -69,9 +82,23 @@ public class ModFetcher
     /// <returns>A task that completes when the mod has been downloaded.</returns>
     public async Task DownloadAsync(Mod mod, ModRelease modRelease, DirectoryInfo downloadDirectory, FileInfo modListJson, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
     {
-        this.logger.LogDebug("Downloading {modRelease} to {directory} and updating {file}", modRelease, downloadDirectory.FullName, modListJson.FullName);
         await DownloadModAsync(modRelease, downloadDirectory, authentication, cancellationToken);
+        await UpdateModListAsync(mod, modRelease, modListJson, cancellationToken);
+    }
 
+
+    private static Task UpdateModListAsync(Mod mod, ModRelease modRelease, FileInfo modListJson, CancellationToken cancellationToken)
+        => UpdateModListAsync(new[] { (mod, modRelease) }, modListJson, cancellationToken);
+
+    /// <summary>
+    /// Updates <paramref name="modListJson"/> with information about <paramref name="mods"/>.
+    /// </summary>
+    /// <param name="mods">The mods to update.</param>
+    /// <param name="modListJson">The file to update.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A task that completes when <paramref name="modListJson"/> is updated.</returns>
+    private static async Task UpdateModListAsync(IReadOnlyCollection<(Mod mod, ModRelease modRelease)> mods, FileInfo modListJson, CancellationToken cancellationToken)
+    {
         List<ModListMod> modListMods;
         if (modListJson.Exists)
         {
@@ -84,8 +111,9 @@ public class ModFetcher
             modListMods = new List<ModListMod>();
         }
 
-        modListMods.RemoveAll(modListMod => modListMod.Name == mod.Name);
-        modListMods.Add(new ModListMod(mod.Name, true, modRelease.Version));
+        var modsToUpdate = mods.Select(mod => new ModListMod(mod.mod.Name, true, mod.modRelease.Version)).ToHashSet();
+        modListMods.RemoveAll(modListMod => modsToUpdate.Contains(modListMod));
+        modListMods.AddRange(modsToUpdate);
         modListMods.Sort();
 
         // create or overwrite
@@ -102,6 +130,31 @@ public class ModFetcher
         return modWithRelease?.Releases;
     }
 
+    private async Task<ModRelease?> GetLatestReleaseAsync(Mod mod, FactorioAuthentication authentication, CancellationToken cancellationToken)
+    {
+        var modReleases = await ListReleasesAsync(mod, authentication, cancellationToken);
+        if (modReleases == null)
+        {
+            this.logger.LogDebug("Unable to list releases for {mod}", mod);
+            return null;
+        }
+
+        if (modReleases.Count == 0)
+        {
+            this.logger.LogDebug("Did not find any releases for {mod}", mod);
+            return null;
+        }
+
+        var latestModRelease = modReleases.MaxBy(modRelease => modRelease.ReleasedAt);
+        if (latestModRelease == null)
+        {
+            this.logger.LogDebug("Unable to find latest release for {mod} with {count} releases", mod, modReleases.Count);
+            return null;
+        }
+
+        return latestModRelease;
+    }
+
     /// <summary>
     /// Downloads a mod to a directory.
     /// </summary>
@@ -112,6 +165,7 @@ public class ModFetcher
     /// <returns>A task taht completes when the mod has been downloaded.</returns>
     private async Task DownloadModAsync(ModRelease modRelease, DirectoryInfo downloadDirectory, FactorioAuthentication authentication, CancellationToken cancellationToken)
     {
+        this.logger.LogDebug("Downloading {modRelease} to {directory}", modRelease, downloadDirectory.FullName);
         downloadDirectory.Create();
         var fullDownloadUrl = CreateDownloadUrl(modRelease, authentication);
 

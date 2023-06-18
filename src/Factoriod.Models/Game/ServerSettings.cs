@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Factoriod.Models.Mods;
 using Factoriod.Utilities;
 
 namespace Factoriod.Models.Game;
@@ -81,7 +82,10 @@ public record ServerSettingsWithSecrets(
     string Password = "",
     string Token = "",
     string GamePassword = ""
-) : ServerSettings;
+) : ServerSettings
+{
+    public FactorioAuthentication? Authentication => (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Token)) ? null : new(Username, Token);
+}
 
 /// <summary>
 /// Visibility of a game.

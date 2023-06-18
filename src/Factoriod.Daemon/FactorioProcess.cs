@@ -25,7 +25,7 @@ public sealed class FactorioProcess : RestartableBackgroundService
     private readonly ReleaseFetcher releaseFetcher;
     private readonly RconClient rconClient;
     private readonly IOptions<RconOptions> rconOptions;
-
+    private readonly ModFetcher modFetcher;
     private static readonly Password RconPasswordGenerator = new(includeLowercase: true, includeUppercase: true, includeNumeric: true, includeSpecial: false, 16);
 
     public ServerStatus ServerStatus { get; init; }
@@ -39,7 +39,7 @@ public sealed class FactorioProcess : RestartableBackgroundService
     /// </remarks>
     private FactorioException? incompatibleMapVersionError = null;
 
-    public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher, RconClient rconClient, IOptions<RconOptions> rconOptions)
+    public FactorioProcess(ILogger<FactorioProcess> logger, IOptions<Options.Factorio> options, VersionFetcher versionFetcher, ReleaseFetcher releaseFetcher, RconClient rconClient, IOptions<RconOptions> rconOptions, ModFetcher modFetcher)
     {
         this.logger = logger;
         this.options = options.Value;
@@ -47,6 +47,8 @@ public sealed class FactorioProcess : RestartableBackgroundService
         this.releaseFetcher = releaseFetcher;
         this.rconClient = rconClient;
         this.rconOptions = rconOptions;
+        this.modFetcher = modFetcher;
+
         this.ServerStatus = new ServerStatus();
     }
 
@@ -741,19 +743,31 @@ public sealed class FactorioProcess : RestartableBackgroundService
                 return string.Join('_', parts.Take(parts.Length - 1));
             })
             .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => new ModListMod(name))
             .ToList();
 
         var requestedMods = mods.Mods
-            .Select(mod => mod.Name)
-            .Where(name => name != "base")
+            .Where(mod => mod.Name != "base")
             .ToList();
 
-        var missingMods = requestedMods.Except(downloadedMods);
+        var missingMods = requestedMods.Except(downloadedMods).ToList();
         this.logger.LogTrace(
             "Missing mods: [{missing}]; downloaded: [{downloaded}]; requested: [{requested}]",
-            string.Join(", ", missingMods),
-            string.Join(", ", downloadedMods),
-            string.Join(", ", requestedMods));
+            string.Join(", ", missingMods.Select(mod => mod.Name)),
+            string.Join(", ", downloadedMods.Select(mod => mod.Name)),
+            string.Join(", ", requestedMods.Select(mod => mod.Name)));
+
+        if (missingMods.Any())
+        {
+            var serverSettingsWithSecrets = await this.options.Configuration.GetServerSettingsAsync<ServerSettingsWithSecrets>(cancellationToken)
+                ?? throw new InvalidOperationException("Cannot fetch mods: failed to deserialize server settings.");
+
+            var authentication = serverSettingsWithSecrets.Authentication
+                ?? throw new InvalidOperationException("Cannot fetch mods: username and token are not available.");
+
+            this.logger.LogInformation("Downloading missing mods: [{missing}]", string.Join(", ", missingMods.Select(mod => mod.Name)));
+            await this.modFetcher.BatchDownloadLatestAsync(missingMods.Select(mod => new Mod(mod.Name)), modListJson, modsRootDirectory, authentication, cancellationToken);
+        }
     }
 
     private static bool AddArgumentIfFileExists(List<string> arguments, string option, FileInfo? path)
