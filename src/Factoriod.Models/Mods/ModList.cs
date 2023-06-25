@@ -28,6 +28,7 @@ public record ModList(IReadOnlyCollection<ModListMod>? Mods = null)
         // always overwrite the entire file's contents
         using var stream = destination.Open(FileMode.Create);
         await JsonSerializer.SerializeAsync(stream, this, JsonSerializerOptions, cancellationToken);
+        stream.WriteByte((byte)'\n');
     }
 
     public static async Task<ModList?> DeserializeFromAsync(FileInfo source, CancellationToken cancellationToken = default)
