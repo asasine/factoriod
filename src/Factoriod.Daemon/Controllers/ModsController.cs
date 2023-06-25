@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using Factoriod.Daemon.Options;
+﻿using Factoriod.Daemon.Options;
 using Factoriod.Fetcher;
 using Factoriod.Models.Game;
 using Factoriod.Models.Mods;
