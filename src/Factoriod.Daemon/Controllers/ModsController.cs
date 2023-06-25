@@ -42,15 +42,10 @@ public class ModsController : ControllerBase
         return Ok(enabledModNames);
     }
 
-    [HttpPost]
-    public async Task<ActionResult> AddModAsync([FromBody] ModListMod mod, [FromQuery] FactorioAuthentication? authentication = null)
+    [HttpPost("{name}")]
+    public async Task<ActionResult> AddModAsync([FromRoute] string mod, [FromQuery] FactorioAuthentication? authentication = null)
     {
         this.logger.LogTrace("Adding {mod}", mod);
-        if (!mod.Enabled)
-        {
-            return BadRequest("Use DELETE to disable mods.");
-        }
-
         if (authentication == null)
         {
             this.logger.LogDebug("Reading authentication credentials from configuration.");
@@ -66,8 +61,8 @@ public class ModsController : ControllerBase
             return BadRequest("Credentials must be provided in request query or server settings.");
         }
 
-        var success = await this.modFetcher.DownloadLatestAsync(new Mod(mod.Name), this.factorioOptions.Value.Configuration.GetModListPath(), this.factorioOptions.Value.GetModsRootDirectory(), authentication);
-        return success ? Ok() : throw new Exception($"Failed to download mod {mod.Name}");
+        var found = await this.modFetcher.UpdateModListWithLatestAsync(new Mod(mod), this.factorioOptions.Value.Configuration.GetModListPath(), authentication);
+        return found ? Ok() : NotFound($"Mod {mod} could not be found.");
     }
 
     [HttpDelete("{name}")]

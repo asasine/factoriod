@@ -31,7 +31,15 @@ public class ModFetcher
         this.httpClient = httpClient;
     }
 
-    public async Task<bool> DownloadLatestAsync(Mod mod, FileInfo modListJson, DirectoryInfo downloadDirectory, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Fetches the latest release of <paramref name="mod"/> and adds it to <paramref name="modListJson"/>.
+    /// </summary>
+    /// <param name="mod">The mod to add.</param>
+    /// <param name="modListJson">The file to add the latest release of <paramref name="mod"/> to.</param>
+    /// <param name="authentication">Authentication parameters.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="false"/> if the mod could not be found, <see langword="true"/> otherwise.</returns>
+    public async Task<bool> UpdateModListWithLatestAsync(Mod mod, FileInfo modListJson, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
     {
         var latestModRelease = await GetLatestReleaseAsync(mod, authentication, cancellationToken);
         if (latestModRelease == null)
@@ -40,7 +48,7 @@ public class ModFetcher
             return false;
         }
 
-        await DownloadAsync(mod, latestModRelease, downloadDirectory, modListJson, authentication, cancellationToken);
+        await UpdateModListAsync(mod, latestModRelease, modListJson, cancellationToken);
         return true;
     }
 
