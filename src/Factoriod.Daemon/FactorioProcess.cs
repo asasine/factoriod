@@ -723,7 +723,7 @@ public sealed class FactorioProcess : RestartableBackgroundService
         ModList? mods = null;
         if (modListJson.Exists)
         {
-            mods = await ModList.DeserialzeFromAsync(modListJson, cancellationToken);
+            mods = await ModList.DeserializeFromAsync(modListJson, cancellationToken);
         }
 
         if (mods == null)

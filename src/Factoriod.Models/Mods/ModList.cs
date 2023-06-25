@@ -29,7 +29,7 @@ public record ModList(IReadOnlyCollection<ModListMod>? Mods = null)
         await JsonSerializer.SerializeAsync(stream, this, JsonSerializerOptions, cancellationToken);
     }
 
-    public static async Task<ModList?> DeserialzeFromAsync(FileInfo source, CancellationToken cancellationToken = default)
+    public static async Task<ModList?> DeserializeFromAsync(FileInfo source, CancellationToken cancellationToken = default)
     {
         if (!source.Exists)
         {

@@ -31,7 +31,7 @@ public class ModsController : ControllerBase
             return Ok(Enumerable.Empty<string>());
         }
 
-        var mods = await ModList.DeserialzeFromAsync(modListJson) ?? throw new Exception("Unable to read mod list file.");
+        var mods = await ModList.DeserializeFromAsync(modListJson) ?? throw new Exception("Unable to read mod list file.");
         var enabledModNames = mods
             .Mods
             .Where(mod => mod.Enabled)
@@ -59,7 +59,7 @@ public class ModsController : ControllerBase
     {
         this.logger.LogTrace("Deleting {mod}", name);
         var modListPath = this.factorioOptions.Value.Configuration.GetModListPath();
-        var mods = await ModList.DeserialzeFromAsync(modListPath) ?? throw new Exception("Unable to read mod list file.");
+        var mods = await ModList.DeserializeFromAsync(modListPath) ?? throw new Exception("Unable to read mod list file.");
 
         // disable the mod by setting it to disabled in the mod list and by deleting the zip from the mods cache directory if it exists
         mods = mods.WithDisabled(name);
