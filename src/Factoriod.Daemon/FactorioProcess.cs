@@ -723,11 +723,13 @@ public sealed class FactorioProcess : RestartableBackgroundService
         ModList? mods = null;
         if (modListJson.Exists)
         {
+            this.logger.LogTrace("Reading mods from {path}", modListJson.FullName);
             mods = await ModList.DeserializeFromAsync(modListJson, cancellationToken);
         }
 
         if (mods == null)
         {
+            this.logger.LogTrace("No mods found. Writing defaults to {path}", modListJson.FullName);
             mods = new ModList();
             await mods.SerializeToAsync(modListJson, cancellationToken);
             modListJson.Refresh();
