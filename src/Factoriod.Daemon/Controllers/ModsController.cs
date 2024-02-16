@@ -43,7 +43,7 @@ public class ModsController : ControllerBase
     }
 
     [HttpPost("{name}")]
-    public async Task<ActionResult> AddModAsync([FromRoute] string mod, [FromQuery] FactorioAuthentication? authentication = null)
+    public async Task<ActionResult<IEnumerable<ModListMod>>> AddModAsync([FromRoute] string mod, [FromQuery] FactorioAuthentication? authentication = null)
     {
         this.logger.LogTrace("Adding {mod}", mod);
         if (authentication == null)
@@ -61,8 +61,8 @@ public class ModsController : ControllerBase
             return BadRequest("Credentials must be provided in request query or server settings.");
         }
 
-        var found = await this.modFetcher.UpdateModListWithLatestAsync(new Mod(mod), this.factorioOptions.Value.Configuration.GetModListPath(), authentication);
-        return found ? Ok() : NotFound($"Mod {mod} could not be found.");
+        var updatedMods = await this.modFetcher.UpdateModListWithLatestAsync(new Mod(mod), this.factorioOptions.Value.Configuration.GetModListPath(), authentication);
+        return updatedMods != null ? Ok(updatedMods) : NotFound($"Mod {mod} could not be found.");
     }
 
     [HttpDelete("{name}")]

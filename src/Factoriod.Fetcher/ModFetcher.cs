@@ -39,17 +39,16 @@ public class ModFetcher
     /// <param name="authentication">Authentication parameters.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns><see langword="false"/> if the mod could not be found, <see langword="true"/> otherwise.</returns>
-    public async Task<bool> UpdateModListWithLatestAsync(Mod mod, FileInfo modListJson, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ModListMod>?> UpdateModListWithLatestAsync(Mod mod, FileInfo modListJson, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
     {
         var latestModRelease = await GetLatestReleaseAsync(mod, authentication, cancellationToken);
         if (latestModRelease == null)
         {
             this.logger.LogWarning("Unable to find latest release for {mod}", mod);
-            return false;
+            return null;
         }
 
-        await UpdateModListAsync(mod, latestModRelease, modListJson, cancellationToken);
-        return true;
+        var updatedMods = await UpdateModListAsync(mod, latestModRelease, modListJson, cancellationToken);
     }
 
     /// <summary>
@@ -79,23 +78,14 @@ public class ModFetcher
     }
 
     /// <summary>
-    /// Downloads the latest release of a mod and updates the mod-list.json file.
+    /// Updates <paramref name="modListJson"/> with information about <paramref name="mod"/>.
     /// </summary>
-    /// <param name="mod">The mod to download.</param>
-    /// <param name="modRelease">The mod release to download.</param>
-    /// <param name="downloadDirectory">The directory to download the mod to.</param>
-    /// <param name="modListJson">The path to the mod-list.json file.</param>
-    /// <param name="authentication">The user's authentication parameters to download the mod with.</param>
-    /// <param name="cancellationToken">A token to cancel the download.</param>
-    /// <returns>A task that completes when the mod has been downloaded.</returns>
-    public async Task DownloadAsync(Mod mod, ModRelease modRelease, DirectoryInfo downloadDirectory, FileInfo modListJson, FactorioAuthentication authentication, CancellationToken cancellationToken = default)
-    {
-        await DownloadModAsync(modRelease, downloadDirectory, authentication, cancellationToken);
-        await UpdateModListAsync(mod, modRelease, modListJson, cancellationToken);
-    }
-
-
-    private static Task UpdateModListAsync(Mod mod, ModRelease modRelease, FileInfo modListJson, CancellationToken cancellationToken)
+    /// <param name="mod">The mod to update.</param>
+    /// <param name="modRelease">The release of <paramref name="mod"/> to update.</param>
+    /// <param name="modListJson">The file to update.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The updated mods.</returns>
+    private static Task<IEnumerable<ModListMod>> UpdateModListAsync(Mod mod, ModRelease modRelease, FileInfo modListJson, CancellationToken cancellationToken)
         => UpdateModListAsync(new[] { (mod, modRelease) }, modListJson, cancellationToken);
 
     /// <summary>
@@ -104,25 +94,28 @@ public class ModFetcher
     /// <param name="mods">The mods to update.</param>
     /// <param name="modListJson">The file to update.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A task that completes when <paramref name="modListJson"/> is updated.</returns>
-    private static async Task UpdateModListAsync(IReadOnlyCollection<(Mod mod, ModRelease modRelease)> mods, FileInfo modListJson, CancellationToken cancellationToken)
+    /// <returns>The updated mods.</returns>
+    private static async Task<IEnumerable<ModListMod>> UpdateModListAsync(IReadOnlyCollection<(Mod mod, ModRelease modRelease)> mods, FileInfo modListJson, CancellationToken cancellationToken)
     {
-        var modListMods = (await ModList.DeserializeFromAsync(modListJson, cancellationToken))?.Mods.ToList() ?? new List<ModListMod>();
+        var modListMods = await GetInstalledModsAsync(modListJson, cancellationToken);
         var modsToUpdate = mods.Select(mod => new ModListMod(mod.mod.Name, true, mod.modRelease.Version)).ToHashSet();
         modListMods.RemoveAll(modListMod => modsToUpdate.Contains(modListMod));
         modListMods.AddRange(modsToUpdate);
         modListMods.Sort();
 
         // create or overwrite
-        using (var modListJsonFileStream = modListJson.Open(FileMode.Create))
-        {
-            await JsonSerializer.SerializeAsync(modListJsonFileStream, new ModList(modListMods), JsonSerializerOptions, cancellationToken);
-        }
+        using var modListJsonFileStream = modListJson.Open(FileMode.Create);
+        await JsonSerializer.SerializeAsync(modListJsonFileStream, new ModList(modListMods), JsonSerializerOptions, cancellationToken);
+
+        return modsToUpdate;
     }
+
+    private static async Task<List<ModListMod>> GetInstalledModsAsync(FileInfo modListJson, CancellationToken cancellationToken)
+        => (await ModList.DeserializeFromAsync(modListJson, cancellationToken))?.Mods.ToList() ?? new List<ModListMod>();
 
     private async Task<IReadOnlyCollection<ModRelease>?> ListReleasesAsync(Mod mod, FactorioAuthentication authentication, CancellationToken cancellationToken)
     {
-        var shortModResultsUrl = CreateModResultUrl(mod, authentication);
+        var shortModResultsUrl = CreateModResultUrl(mod, authentication, full: true);
         var modWithRelease = await httpClient.GetFromJsonAsync<Mod>(shortModResultsUrl, JsonSerializerOptions, cancellationToken);
         return modWithRelease?.Releases;
     }
