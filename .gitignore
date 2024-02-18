@@ -1,12 +1,1 @@
-# .NET
-obj
-bin
-
-# Visual Studio
-.vs
-launchSettings.json
-*.csproj.user
-UpgradeLog.htm
-
-# dotnet-deb
-Directory.Build.props
+/target

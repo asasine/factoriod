@@ -1,5 +1,5 @@
 # factoriod
-[![.NET](https://github.com/asasine/factoriod/actions/workflows/dotnet.yml/badge.svg)](https://github.com/asasine/factoriod/actions/workflows/dotnet.yml)
+[![Rust](https://github.com/asasine/factoriod/actions/workflows/rust.yaml/badge.svg)](https://github.com/asasine/factoriod/actions/workflows/rust.yaml)
 
 A factorio daemon for Ubuntu.
 
@@ -31,7 +31,6 @@ A factorio daemon for Ubuntu.
 
 ## Configuration
 The daemon reads configuration from the _/etc/factoriod/_ directory by default.
-The _/etc/factoriod/appsettings.json_ file can be modified at runtime to change the daemon's configuration.
 
 ### Systemd service
 1. [Install the daemon](#building-the-debian-package)
