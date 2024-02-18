@@ -3,7 +3,11 @@
 version = 3
 
 [[package]]
-name = "factoriod-daemon"
+name = "factorio-api"
+version = "0.1.0"
+
+[[package]]
+name = "factorio-daemon"
 version = "0.1.0"
 dependencies = [
  "systemd-directories",
