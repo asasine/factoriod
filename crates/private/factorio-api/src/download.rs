@@ -12,8 +12,9 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
 use strum;
-use xz2;
 use tar;
+use tracing;
+use xz2;
 
 pub type Version = semver::Version;
 
@@ -89,6 +90,7 @@ pub struct Versions {
 /// let latest_versions = download::latest_versions();
 /// println!("latest versions: {:?}", latest_versions);
 /// ```
+#[tracing::instrument]
 pub fn latest_versions() -> Result<Versions, Box<dyn std::error::Error>> {
     Ok(reqwest::blocking::get("https://factorio.com/api/latest-releases")?.json::<Versions>()?)
 }
@@ -101,6 +103,7 @@ pub fn latest_versions() -> Result<Versions, Box<dyn std::error::Error>> {
 /// let latest_stable_headless_version = download::latest_stable_headless_version();
 /// println!("latest stable headless version: {:?}", latest_stable_headless_version);
 /// ```
+#[tracing::instrument]
 pub fn latest_stable_headless_version() -> Result<Version, Box<dyn std::error::Error>> {
     let versions = latest_versions()?;
     Ok(versions
@@ -124,21 +127,37 @@ pub fn download_url(version: &Version, build: Build, distro: Distro) -> String {
     )
 }
 
-/// Downloads a Factorio version to a directory.
+/// Downloads a Factorio version to a directory. Returns the path to the downloaded file.
 ///
 /// # Example
 /// ```no_run
 /// use factorio_api::download;
 /// let version = download::Version::new(1, 1, 1);
-/// download::download_to(&version, download::Build::Headless, download::Distro::Linux64, "/tmp/factorio")?;
+/// let archive = download::download_to(
+///     &version,
+///     download::Build::Headless,
+///     download::Distro::Linux64,
+///     "/tmp/factorio"
+/// )?;
+///
+/// println!("downloaded to: {}", archive.display());
 /// ```
 pub fn download_to<P: AsRef<std::path::Path>>(
     version: &Version,
     build: Build,
     distro: Distro,
     directory: P,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
     let directory = directory.as_ref();
+    let span = tracing::span!(
+        tracing::Level::TRACE,
+        "download_to",
+        ?version,
+        ?build,
+        ?distro,
+        ?directory
+    );
+    let _enter = span.enter();
     if directory.is_file() {
         return Err("directory is a file".into());
     }
@@ -155,9 +174,9 @@ pub fn download_to<P: AsRef<std::path::Path>>(
         .unwrap_or("factorio.tar.xz");
 
     let destination = directory.join(filename);
-    let mut file = std::fs::File::create(destination)?;
+    let mut file = std::fs::File::create(&destination)?;
     response.copy_to(&mut file)?;
-    Ok(())
+    Ok(destination)
 }
 
 /// Extracts a `.tar.xz` archive to a directory.
@@ -173,6 +192,8 @@ pub fn extract_to<P1: AsRef<std::path::Path>, P2: AsRef<std::path::Path>>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let archive = archive.as_ref();
     let directory = directory.as_ref();
+    let span = tracing::span!(tracing::Level::TRACE, "extract_to", ?archive, ?directory);
+    let _enter = span.enter();
     if !archive.is_file() {
         return Err("archive is not a file".into());
     }
@@ -181,7 +202,12 @@ pub fn extract_to<P1: AsRef<std::path::Path>, P2: AsRef<std::path::Path>>(
         return Err("archive is not an .xz file".into());
     }
 
-    if archive.with_extension("").extension().and_then(|ext| ext.to_str()) != Some("tar") {
+    if archive
+        .with_extension("")
+        .extension()
+        .and_then(|ext| ext.to_str())
+        != Some("tar")
+    {
         return Err("archive is not a .tar.xz file".into());
     }
 
