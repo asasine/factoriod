@@ -1,5 +1,3 @@
-//! The *factorio-api* crate provides a Rust interface for Factorio's REST APIs.
+//! The *factorio-api* crate provides a Rust interface for [Factorio's HTTP APIs](https://wiki.factorio.com/Factorio_HTTP_API_usage_guidelines).
 
-pub fn versions() {
-    println!("versions");
-}
+pub mod download;
