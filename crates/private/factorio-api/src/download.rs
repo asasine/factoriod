@@ -117,9 +117,11 @@ pub fn latest_stable_headless_version() -> Result<Version, Box<dyn std::error::E
 ///
 /// # Example
 /// ```
-/// use factorio_api::download;
+/// use factorio_api::download::{self, Build, Distro};
 /// let version = download::Version::parse("1.1.0").unwrap();
-/// let download_url = download::download_url(Version)
+/// let download_url = download::download_url(&version, Build::Headless, Distro::Linux64);
+/// println!("download URL: {}", download_url);
+/// ```
 pub fn download_url(version: &Version, build: Build, distro: Distro) -> String {
     format!(
         "https://factorio.com/get-download/{}/{}/{}",
@@ -131,6 +133,7 @@ pub fn download_url(version: &Version, build: Build, distro: Distro) -> String {
 ///
 /// # Example
 /// ```no_run
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use factorio_api::download;
 /// let version = download::Version::new(1, 1, 1);
 /// let archive = download::download_to(
@@ -141,6 +144,8 @@ pub fn download_url(version: &Version, build: Build, distro: Distro) -> String {
 /// )?;
 ///
 /// println!("downloaded to: {}", archive.display());
+/// # Ok(())
+/// # }
 /// ```
 pub fn download_to<P: AsRef<std::path::Path>>(
     version: &Version,
@@ -183,8 +188,11 @@ pub fn download_to<P: AsRef<std::path::Path>>(
 ///
 /// # Example
 /// ```no_run
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use factorio_api::download;
 /// download::extract_to("/tmp/factorio.tar.xz", "/tmp/factorio")?;
+/// # Ok(())
+/// # }
 /// ```
 pub fn extract_to<P1: AsRef<std::path::Path>, P2: AsRef<std::path::Path>>(
     archive: P1,
