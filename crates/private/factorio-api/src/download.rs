@@ -170,7 +170,7 @@ pub fn download_to<P: AsRef<std::path::Path>>(
     std::fs::create_dir_all(directory)?;
 
     let url = download_url(version, build, distro);
-    let mut response = reqwest::blocking::get(&url)?;
+    let mut response = reqwest::blocking::get(url)?;
     let filename = response
         .url()
         .path_segments()
