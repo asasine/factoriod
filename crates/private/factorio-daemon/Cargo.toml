@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 factorio-api = { path = "../factorio-api" }
+factorio-config = { path = "../factorio-config" }
 systemd-directories = { path = "../../public/systemd-directories" }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
