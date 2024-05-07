@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 /// A valid value can be created using the [`Self::try_from`] function and the value can be accessed using the [`From`]
 /// or [`Into`] trait implementations:
 /// ```
-/// use factorio_config::MapGenSizeFloat;
+/// use factoriod::config::MapGenSizeFloat;
 /// let size = MapGenSizeFloat::try_from(1.0).expect("valid map gen size");
 /// assert_eq!(f32::from(size), 1.0);
 /// let size: f32 = size.into();
@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// An invalid value can be checked against the [`MapGenSizeFloatError`] enum:
 /// ```
-/// use factorio_config::{MapGenSizeFloat, MapGenSizeFloatError};
+/// use factoriod::config::{MapGenSizeFloat, MapGenSizeFloatError};
 /// assert_eq!(MapGenSizeFloat::try_from(-1.0), Err(MapGenSizeFloatError::GreaterOrEqualViolated));
 /// assert_eq!(MapGenSizeFloat::try_from(7.0), Err(MapGenSizeFloatError::LessOrEqualViolated));
 /// assert_eq!(MapGenSizeFloat::try_from(f32::NAN), Err(MapGenSizeFloatError::FiniteViolated));
@@ -111,14 +111,14 @@ pub enum MapGenSize {
     /// # Examples
     /// Named values are provided for backwards compatibility:
     /// ```
-    /// use factorio_config::MapGenSize;
+    /// use factoriod::config::MapGenSize;
     /// assert_eq!(f32::from(MapGenSize::Normal), 1.0)
     /// ```
     ///
     /// Non-named values can also be created with validation using the [`MapGenSizeFloat::try_from`] function. See
     /// [`MapGenSizeFloat`] for more information since this conversion is fallible.
     /// ```
-    /// use factorio_config::{MapGenSize, MapGenSizeFloat};
+    /// use factoriod::config::{MapGenSize, MapGenSizeFloat};
     /// let size = MapGenSize::Float(MapGenSizeFloat::try_from(1.0).expect("valid map gen size"));
     /// ```
     #[serde(untagged)]

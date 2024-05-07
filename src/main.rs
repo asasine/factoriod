@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use factoriod::factorio_api::download;
-use factoriod::factorio_daemon;
-use factoriod::factorio_daemon::factorio_server;
+use factoriod::api::download;
+use factoriod::daemon;
+use factoriod::daemon::factorio_server;
 use tracing::info;
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
 
@@ -52,7 +52,7 @@ fn get_factorio_directory<P: AsRef<Path>>(
 
 fn run_server<P: AsRef<Path>>(factorio_dir: P) -> factorio_server::Result<()> {
     let factorio_dir = factorio_dir.as_ref();
-    let server = factorio_daemon::FactorioServer::try_new(factorio_dir)?;
+    let server = daemon::FactorioServer::try_new(factorio_dir)?;
     server.start()
 }
 

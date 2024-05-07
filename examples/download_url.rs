@@ -1,4 +1,4 @@
-use factoriod::factorio_api::download;
+use factoriod::api::download;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let version = download::Version::new(1, 1, 1);
