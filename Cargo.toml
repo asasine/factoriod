@@ -2,6 +2,7 @@
 name = "factoriod"
 version = "0.1.0"
 edition = "2021"
+default-run = "factoriod"
 
 [dependencies]
 nutype = { version = "0.4.0", features = ["serde"] }

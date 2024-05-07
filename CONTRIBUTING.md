@@ -1,16 +1,17 @@
 # Contributing
 ## Development
+Many of the modules in this project can be developed and tested independently, without the need to run the daemon, as they are designed with platform-agnostic Rust code.
+
 ### Prerequisites
-1. Linux (tested on Ubuntu)
-1. [Install .NET 6.0 SDK](https://dotnet.microsoft.com/en-us/download)
+1. [Install Rust](https://www.rust-lang.org/tools/install)
 1. Clone the repo
 1. Open a terminal to the cloned repo
-1. Run: `dotnet tool restore`
-1. Run: `dotnet tool run dotnet-deb install`
+1. Run: `cargo build`
+1. Run: `cargo test`
 
 ### Launching the daemon
 1. Open a terminal to the cloned repo
-1. Run: `dotnet run --project src/Factoriod.Daemon`
+1. Run: `cargo run`
 
 ### Building the debian package
 The debian binary package is created using [cargo-deb](https://crates.io/crates/cargo-deb).
@@ -31,4 +32,6 @@ To trigger the workflow, go to [Actions > Release](https://github.com/asasine/fa
 - Minor version: added functionality in a backwards-compatible manner, including deprecations.
 - Patch version: backwards-compatible bug fixes.
 
-At this time, the this project is still in initial development, so the version is 0.y.z. This means that the public API should not be considered stable, and may change in backwards-incompatible ways between minor or patch releases.
+At this time, the this project is still in initial development, so the version is `0.y.z`.
+This means that the public API should not be considered stable, and may change in backwards-incompatible ways between minor or patch releases.
+I will make a best effort to limit breaking changes to minor releases.
