@@ -26,6 +26,9 @@ pub struct FactorioServer {
 #[derive(Debug)]
 pub enum FactorioServerStartError {
     PathNotFound(PathBuf),
+
+    /// No save was found in the saves directory.
+    NoSaveFound(PathBuf),
     StartFailed {
         path: PathBuf,
         source: std::io::Error,
@@ -37,7 +40,10 @@ impl fmt::Display for FactorioServerStartError {
         match self {
             FactorioServerStartError::PathNotFound(path) => {
                 write!(f, "Path not found: {}", path.display())
-            }
+            },
+            FactorioServerStartError::NoSaveFound(path) => {
+                write!(f, "No save found in the saves directory at {}.", path.display())
+            },
             FactorioServerStartError::StartFailed { path, source } => write!(
                 f,
                 "Failed to start Factorio server from binary {}: {}",
@@ -51,8 +57,8 @@ impl fmt::Display for FactorioServerStartError {
 impl Error for FactorioServerStartError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            FactorioServerStartError::PathNotFound { .. } => None,
             FactorioServerStartError::StartFailed { source, .. } => Some(source),
+            _ => None,
         }
     }
 }
@@ -252,5 +258,5 @@ fn get_latest_save(save_dir: &Path) -> Result<PathBuf> {
         .max_by_key(|entry| entry.metadata().map(|meta| meta.modified().ok()).ok().flatten().unwrap_or(SystemTime::UNIX_EPOCH))
         .map(|entry| entry.path());
 
-    latest_save.ok_or_else(|| FactorioServerStartError::PathNotFound(save_dir))
+    latest_save.ok_or_else(|| FactorioServerStartError::NoSaveFound(save_dir))
 }
