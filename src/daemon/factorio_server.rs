@@ -5,12 +5,18 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 
+use systemd_directories;
+
 pub type Result<T> = std::result::Result<T, FactorioServerStartError>;
 
 #[derive(Debug)]
 pub struct FactorioServer {
     /// The path to the Factorio directory. This is the directory that contains the Factorio binary and data.
     factorio_dir: PathBuf,
+
+    /// The path to the server's configuration directory. This directory may contain JSON files that configure the
+    /// server, map generation, and other settings. See [[`crate::config`]] for more information.
+    config_dir: PathBuf,
 }
 
 #[derive(Debug)]
@@ -59,6 +65,7 @@ impl FactorioServer {
                 .to_path_buf()
                 .canonicalize()
                 .map_err(|_| FactorioServerStartError::PathNotFound(factorio_dir.as_ref().to_path_buf()))?,
+            config_dir: systemd_directories::config_dir().unwrap_or(PathBuf::from("etc/factoriod")),
         })
     }
 
