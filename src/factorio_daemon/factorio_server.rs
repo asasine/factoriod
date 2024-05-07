@@ -9,6 +9,7 @@ pub type Result<T> = std::result::Result<T, FactorioServerStartError>;
 
 #[derive(Debug)]
 pub struct FactorioServer {
+    /// The path to the Factorio directory. This is the directory that contains the Factorio binary and data.
     factorio_dir: PathBuf,
 }
 

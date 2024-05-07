@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{MapGenSize, MapGenSizeFloat};
+use super::{MapGenSize, MapGenSizeFloat};
 
 /// Settings for the placement of a resource.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

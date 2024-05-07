@@ -1,3 +1,0 @@
-[submodule "crates/public/systemd-directories"]
-	path = crates/public/systemd-directories
-	url = git@github.com:asasine/systemd-directories.git

@@ -143,36 +143,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "factorio-api"
-version = "0.1.0"
-dependencies = [
- "reqwest",
- "semver",
- "serde",
- "strum",
- "tar",
- "tracing",
- "xz2",
-]
-
-[[package]]
-name = "factorio-config"
+name = "factoriod"
 version = "0.1.0"
 dependencies = [
  "nutype",
+ "reqwest",
+ "semver",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "factorio-daemon"
-version = "0.1.0"
-dependencies = [
- "factorio-api",
- "factorio-config",
- "systemd-directories 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum",
+ "systemd-directories",
+ "tar",
  "tracing",
  "tracing-subscriber",
+ "xz2",
 ]
 
 [[package]]
@@ -1000,10 +984,6 @@ dependencies = [
  "core-foundation-sys",
  "libc",
 ]
-
-[[package]]
-name = "systemd-directories"
-version = "0.1.1"
 
 [[package]]
 name = "systemd-directories"

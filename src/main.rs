@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use factorio_api::download;
-use factorio_daemon;
-use factorio_daemon::factorio_server;
+use factoriod::factorio_api::download;
+use factoriod::factorio_daemon;
+use factoriod::factorio_daemon::factorio_server;
 use tracing::info;
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
 
@@ -11,17 +11,7 @@ use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
 fn setup_tracing() {
     let env_filter = EnvFilter::from_default_env()
         .add_directive(
-            "factorio_api=trace"
-                .parse()
-                .expect("failed to parse directive."),
-        )
-        .add_directive(
-            "factorio_config=trace"
-                .parse()
-                .expect("failed to parse directive."),
-        )
-        .add_directive(
-            "factorio_daemon=trace"
+            "factoriod=trace"
                 .parse()
                 .expect("failed to parse directive."),
         );

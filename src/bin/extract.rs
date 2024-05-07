@@ -1,4 +1,4 @@
-use factorio_api::download;
+use factoriod::factorio_api::download;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let download_directory = std::env::current_dir()?;
