@@ -170,7 +170,7 @@ version = "0.1.0"
 dependencies = [
  "factorio-api",
  "factorio-config",
- "systemd-directories",
+ "systemd-directories 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1004,6 +1004,12 @@ dependencies = [
 [[package]]
 name = "systemd-directories"
 version = "0.1.1"
+
+[[package]]
+name = "systemd-directories"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5469e2e28839738d6549f9eed6b48af8c11eb8d720b308ec01fd3c105c9f394"
 
 [[package]]
 name = "tar"
