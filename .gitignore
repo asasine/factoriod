@@ -1,3 +1,5 @@
 /target
 /factorio
 factorio*.tar.xz
+/var/lib
+/etc
