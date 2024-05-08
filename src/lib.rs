@@ -1,7 +1,9 @@
 pub mod api;
 pub mod config;
 pub mod daemon;
+mod utils;
 
+pub use utils::*;
 use crate::api::download;
 
 use std::path::Path;

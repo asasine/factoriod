@@ -4,7 +4,6 @@ use std::error::Error;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::SystemTime;
 
 use systemd_directories::SystemdDirs;
 
@@ -226,7 +225,7 @@ impl FactorioServer {
         let save_dir = self.state_dir.join("saves");
         match self.state_dir.join("saves").canonicalize() {
             Ok(save_dir) if save_dir.is_dir() => {
-                let latest_save = get_latest_save(&save_dir)?;
+                let latest_save = crate::get_latest_save(&save_dir)?;
                 tracing::debug!("latest save: {}", latest_save.display());
                 command.arg("--start-server").arg(latest_save);
                 Ok(self)
@@ -241,22 +240,4 @@ impl FactorioServer {
             }
         }
     }
-}
-
-fn get_latest_save(save_dir: &Path) -> Result<PathBuf> {
-    let save_dir = save_dir.canonicalize()
-        .map_err(|_| FactorioServerStartError::PathNotFound(save_dir.to_path_buf()))?;
-
-    let latest_save = save_dir.read_dir()
-        .map_err(|source| FactorioServerStartError::StartFailed {
-            path: save_dir.clone(),
-            source,
-        })?
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.file_type().map(|ft| ft.is_file()).unwrap_or(false))
-        .filter(|entry| entry.path().extension().map(|ext| ext == "zip").unwrap_or(false))
-        .max_by_key(|entry| entry.metadata().map(|meta| meta.modified().ok()).ok().flatten().unwrap_or(SystemTime::UNIX_EPOCH))
-        .map(|entry| entry.path());
-
-    latest_save.ok_or_else(|| FactorioServerStartError::NoSaveFound(save_dir))
 }
