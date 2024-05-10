@@ -1,0 +1,10 @@
+[Unit]
+Description=Starts the factorio server when its been downloaded and has its options environment file.
+
+[Path]
+Unit=factorio.service
+PathExists=/var/cache/factoriod/bin/current/factorio/bin/x64/factorio
+PathExists=/var/cache/factoriod/opts.env
+
+[Install]
+WantedBy=multi-user.target

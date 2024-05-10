@@ -38,7 +38,9 @@ The daemon reads configuration from the _/etc/factoriod/_ directory by default.
 1. To have the service start on boot: `sudo systemctl enable factoriod`
 1. View the logs: `journalctl -u factoriod -f`
 
-#### Directories in use
-- /var/cache/factoriod/: downloaded game binaries
-- /var/lib/factoriod/: dynamic files including save games and generated configuration
-- /etc/factoriod/: static configuration files
+#### Special directories and files
+- /var/cache/factoriod/bin/current/factorio/: downloaded game binaries
+- /var/cache/factoriod/opts.env: a systemd-compatible environment file containing CLI flags for the `factorio` binary
+- /var/lib/factoriod/saves/: save games
+- /var/lib/factoriod/mods/: mods
+- /etc/factoriod/: configuration files, used to generate the contents of the above directories

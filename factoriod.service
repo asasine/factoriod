@@ -1,0 +1,21 @@
+[Unit]
+Description=A manager for a headless factorio server.
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/factoriod/factoriod
+Restart=always
+User=factoriod
+
+# downloaded game binaries, opts.env
+CacheDirectory=factoriod
+
+# save games, mods
+StateDirectory=factoriod
+
+# config files to generate cache and state
+ConfigurationDirectory=factoriod
+
+[Install]
+WantedBy=multi-user.target

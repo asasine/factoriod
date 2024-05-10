@@ -1,0 +1,19 @@
+[Unit]
+Description=A headless factorio server from dynamic configuration.
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/var/cache/factoriod/opts.env
+ExecStart=/var/cache/factoriod/bin/current/factorio/bin/x64/factorio ${FACTORIO_OPTS}
+Restart=always
+User=factoriod
+
+# downloaded game binaries, opts.env
+CacheDirectory=factoriod
+
+# save games, mods
+StateDirectory=factoriod
+
+[Install]
+WantedBy=multi-user.target
