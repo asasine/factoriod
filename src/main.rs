@@ -10,7 +10,7 @@ fn run_server<P: AsRef<Path>>(factorio_dir: P) -> factorio_server::Result<()> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    factoriod::setup_tracing();
+    factoriod::setup_tracing(None);
     let factorio_dir = factoriod::get_factorio_directory(std::env::current_dir()?)?;
     info!("factorio directory: {}", factorio_dir.display());
     run_server(factorio_dir)?;

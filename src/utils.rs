@@ -43,7 +43,7 @@ fn get_zips<'a, P: AsRef<Path>>(dir: P) -> Result<impl Iterator<Item = PathBuf> 
 /// If an error occurs while reading the directory, this function will return [`FactorioServerStartError::StartFailed`].
 ///
 /// # Examples
-/// ```
+/// ```no_run
 /// use factoriod::get_saves;
 /// let saves = get_saves("/path/to/saves").unwrap();
 /// ```
@@ -66,7 +66,7 @@ pub fn get_saves<P: AsRef<Path>>(save_dir: P) -> Result<Vec<PathBuf>> {
 /// If the `save_dir` does not contain any save files, this function will return [`FactorioServerStartError::NoSaveFound`].
 ///
 /// # Examples
-/// ```
+/// ```no_run
 /// use factoriod::get_latest_save;
 /// let latest_save = get_latest_save("/path/to/saves").unwrap();
 /// ```

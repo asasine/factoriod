@@ -1,18 +1,20 @@
 pub mod api;
 pub mod config;
 pub mod daemon;
+mod server_opts;
 mod utils;
 
+use std::path::Path;
+
+pub use server_opts::*;
 pub use utils::*;
 use crate::api::download;
-
-use std::path::Path;
 
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
 
 /// Set up tracing for the application. This will log all traces to the console. It additionall sets the lgo level for
 /// the factoriod crates to `trace`.
-pub fn setup_tracing() {
+pub fn setup_tracing(max_level: Option<tracing::Level>) {
     let env_filter = EnvFilter::from_default_env()
         .add_directive(
             "factoriod=trace"
@@ -20,9 +22,12 @@ pub fn setup_tracing() {
                 .expect("failed to parse directive."),
         );
 
+
     FmtSubscriber::builder()
         .with_span_events(FmtSpan::FULL)
         .with_env_filter(env_filter)
+        .with_max_level(max_level.unwrap_or(tracing::Level::WARN))
+        .with_writer(std::io::stderr)
         .try_init()
         .expect("failed to create subscriber");
 }
