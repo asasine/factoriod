@@ -20,6 +20,7 @@ fn write_opts_env(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error::
         .join("factorio.opts.env");
 
     let server_opts = ServerOpts::new(systemd_dirs.config_dir(), systemd_dirs.state_dir());
+    tracing::info!("Writing server options to {}", opts_env.display());
     std::fs::write(&opts_env, server_opts.to_env().as_encoded_bytes())?;
     Ok(())
 }

@@ -15,7 +15,7 @@ fn add_file_opt<P: AsRef<Path>>(command: &mut Command, flags: &[&str], file: P) 
             command.arg(file);
         },
         Ok(file) => tracing::warn!("{} is not a file!", file.display()),
-        Err(e) => tracing::info!("failed to canonicalize {}: {}", file.as_ref().display(), e),
+        Err(e) => tracing::debug!("failed to canonicalize {}: {}", file.as_ref().display(), e),
     }
 }
 
