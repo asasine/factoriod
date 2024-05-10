@@ -12,9 +12,9 @@ use crate::api::download;
 
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
 
-/// Set up tracing for the application. This will log all traces to the console. It additionall sets the lgo level for
+/// Set up tracing for the application. This will log all traces to the console. It additionall sets the log level for
 /// the factoriod crates to `trace`.
-pub fn setup_tracing(max_level: Option<tracing::Level>) {
+pub fn setup_tracing() {
     let env_filter = EnvFilter::from_default_env()
         .add_directive(
             "factoriod=trace"
@@ -26,7 +26,6 @@ pub fn setup_tracing(max_level: Option<tracing::Level>) {
     FmtSubscriber::builder()
         .with_span_events(FmtSpan::FULL)
         .with_env_filter(env_filter)
-        .with_max_level(max_level.unwrap_or(tracing::Level::WARN))
         .with_writer(std::io::stderr)
         .try_init()
         .expect("failed to create subscriber");

@@ -18,7 +18,7 @@ struct Args {
 }
 
 fn main() {
-    factoriod::setup_tracing(Some(tracing::Level::INFO));
+    factoriod::setup_tracing();
     let args = Args::parse();
     let server_opts = factoriod::ServerOpts::new(args.config_dir, args.state_dir);
     std::io::stdout().write_all(server_opts.to_env().as_encoded_bytes()).expect("failed to write to stdout");

@@ -8,7 +8,7 @@ struct Args {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    factoriod::setup_tracing(Some(tracing::Level::INFO));
+    factoriod::setup_tracing();
     let args = Args::parse();
     let factorio_dir = factoriod::get_factorio_directory(std::env::current_dir()?)?;
     let server = FactorioServer::try_new(factorio_dir)?;

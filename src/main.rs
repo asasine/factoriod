@@ -11,7 +11,6 @@ use std::path::PathBuf;
 use factoriod::ServerOpts;
 use factoriod::api::download::{self, Build, Distro};
 use systemd_directories::SystemdDirs;
-use tracing::Level;
 
 /// Writes the options for the systemd service factorio.service to the `factorio.opts.env` file in the cache directory.
 fn write_opts_env(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error::Error>> {
@@ -27,11 +26,7 @@ fn write_opts_env(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error::
 
 /// Downloads and extracts the latest headless Factorio server binary to the cache directory.
 fn acquire_binaries(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error::Error>> {
-    let download_directory = systemd_dirs.cache_dir()
-        .ok_or("cache dir not found")?
-        .join("bin/current");
-
-    std::fs::create_dir_all(&download_directory)?;
+    let download_directory = systemd_dirs.cache_dir().ok_or("cache dir not found")?;
     let scan_tar_xz_paths = || -> Result<Vec<PathBuf>, std::io::Error> {
         Ok(download_directory
             .read_dir()?
@@ -72,7 +67,7 @@ fn acquire_binaries(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    factoriod::setup_tracing(Some(Level::INFO));
+    factoriod::setup_tracing();
     let systemd_dirs = SystemdDirs::new();
     write_opts_env(&systemd_dirs)?;
     acquire_binaries(&systemd_dirs)?;
