@@ -1,5 +1,10 @@
+# Rust build directories
 /target
-/factorio
-factorio*.tar.xz
-/var/lib
+
+
+# Mock systemd directories and content
 /etc
+/var/cache
+/var/lib
+factorio*.tar.xz
+/factorio

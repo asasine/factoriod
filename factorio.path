@@ -4,7 +4,7 @@ Description=Starts the factorio server when its been downloaded and has its opti
 [Path]
 Unit=factorio.service
 PathExists=/var/cache/factoriod/bin/current/factorio/bin/x64/factorio
-PathExists=/var/cache/factoriod/opts.env
+PathExists=/var/cache/factoriod/factorio.opts.env
 
 [Install]
 WantedBy=multi-user.target

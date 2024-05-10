@@ -40,7 +40,7 @@ The daemon reads configuration from the _/etc/factoriod/_ directory by default.
 
 #### Special directories and files
 - /var/cache/factoriod/bin/current/factorio/: downloaded game binaries
-- /var/cache/factoriod/opts.env: a systemd-compatible environment file containing CLI flags for the `factorio` binary
+- /var/cache/factoriod/factorio.opts.env: a systemd-compatible environment file containing CLI flags for the `factorio` binary
 - /var/lib/factoriod/saves/: save games
 - /var/lib/factoriod/mods/: mods
 - /etc/factoriod/: configuration files, used to generate the contents of the above directories
