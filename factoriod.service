@@ -4,7 +4,7 @@ After=network-online.target
 Before=factorio.service
 
 [Service]
-Type=simple
+Type=oneshot
 ExecStart=/usr/lib/factoriod/factoriod
 Restart=on-failure
 User=factoriod
