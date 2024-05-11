@@ -1,6 +1,7 @@
 [Unit]
 Description=A manager for a headless factorio server.
 After=network-online.target
+Before=factorio.service
 
 [Service]
 Type=simple
