@@ -39,7 +39,7 @@ The daemon reads configuration from the _/etc/factoriod/_ directory by default.
 1. View the logs: `journalctl -u factoriod -f`
 
 #### Special directories and files
-- /var/cache/factoriod/bin/current/factorio/: downloaded game binaries
+- /var/cache/factoriod/factorio/: downloaded game binaries
 - /var/cache/factoriod/factorio.opts.env: a systemd-compatible environment file containing CLI flags for the `factorio` binary
 - /var/lib/factoriod/saves/: save games
 - /var/lib/factoriod/mods/: mods

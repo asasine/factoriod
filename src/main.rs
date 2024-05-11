@@ -46,6 +46,10 @@ fn acquire_binaries(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error
                     .and_then(|ext| ext.to_str())
                     == Some("tar")
             })
+            .map(|path| {
+                tracing::trace!("Found tar.xz archive: {}", path.display());
+                path
+            })
             .collect())
     };
 
