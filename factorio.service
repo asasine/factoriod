@@ -5,7 +5,7 @@ After=network-online.target
 [Service]
 Type=simple
 EnvironmentFile=/var/cache/factoriod/factorio.opts.env
-ExecStart=/var/cache/factoriod/factorio/bin/x64/factorio ${FACTORIO_OPTS}
+ExecStart=/bin/bash -c '/var/cache/factoriod/factorio/bin/x64/factorio ${FACTORIO_OPTS}'
 Restart=on-failure
 User=factoriod
 
