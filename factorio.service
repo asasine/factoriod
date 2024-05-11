@@ -6,7 +6,7 @@ After=network-online.target
 Type=simple
 EnvironmentFile=/var/cache/factoriod/factorio.opts.env
 ExecStart=/var/cache/factoriod/factorio/bin/x64/factorio ${FACTORIO_OPTS}
-Restart=always
+Restart=on-failure
 User=factoriod
 
 # downloaded game binaries, opts.env

@@ -5,7 +5,7 @@ After=network-online.target
 [Service]
 Type=simple
 ExecStart=/usr/lib/factoriod/factoriod
-Restart=always
+Restart=on-failure
 User=factoriod
 
 # downloaded game binaries, opts.env
