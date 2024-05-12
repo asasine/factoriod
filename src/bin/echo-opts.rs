@@ -1,5 +1,5 @@
-//! Echoes the options for the systemd service factorio.service, that should be written to the `opts.env` file and
-//! included as an `EnvironmentFile=` option in the unit file.
+//! Echoes the options for the factorio systemd service, that should be written to the `opts.env` file and included as
+//! an `EnvironmentFile=` option in the unit file or sourced with sh or bash.
 
 use std::{io::Write, path::PathBuf};
 

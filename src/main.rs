@@ -1,8 +1,8 @@
 //! factoriod is a utility for managing Factorio servers.
 //!
 //! # Features
-//! 1. A file compatible with the factorio.service's `EnvironmentFile=` option is written from files in this services's
-//!     configuration directory.
+//! 1. A file containing the factorio executable's command line options, that can either be sorued with sh or bash, or
+//!     included with the `EnvironmentFile=` option in the systemd unit file.
 //! 2. The latest save file in the state directory is found and used as the server's save file.
 //! 3. The game binaries are downloaded and extracted to the cache directory.
 
@@ -12,7 +12,7 @@ use factoriod::ServerOpts;
 use factoriod::api::download::{self, Build, Distro};
 use systemd_directories::SystemdDirs;
 
-/// Writes the options for the systemd service factorio.service to the `factorio.opts.env` file in the cache directory.
+/// Writes the options for the factoriod systemd service to the `factorio.opts.env` file in the cache directory.
 fn write_opts_env(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error::Error>> {
     let opts_env = systemd_dirs.cache_dir()
         .ok_or("cache dir not found")?

@@ -1,5 +1,5 @@
 //! The server options module contains the `ServerOpts` struct, which is used to generate the `FACTORIO_OPTS`
-//! environment variable used by the systemd service factorio.service.
+//! environment variable used by the factoriod systemd service.
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -56,7 +56,7 @@ fn add_opts<P: AsRef<Path>>(command: &mut Command, word: &str, dir: &Option<P>, 
 }
 
 /// The options for the server. These can be transformed into the `FACTORIO_OPTS` environment variable used by the
-/// systemd service factorio.service.
+/// factorio systemd service.
 ///
 /// If directories containing configuration and state are not provided, the options will be the bare minimum, which may
 /// not be desirable.
