@@ -4,8 +4,8 @@ After=network-online.target
 
 [Service]
 Type=simple
-EnvironmentFile=/var/cache/factoriod/factorio.opts.env
-ExecStart=/bin/bash -c '/var/cache/factoriod/factorio/bin/x64/factorio ${FACTORIO_OPTS}'
+ExecStartPre=/usr/lib/factoriod/factoriod
+ExecStart=/usr/lib/factoriod/factorio.bash
 Restart=on-failure
 User=factoriod
 
@@ -14,6 +14,9 @@ CacheDirectory=factoriod
 
 # save games, mods
 StateDirectory=factoriod
+
+# config files to generate cache and state
+ConfigurationDirectory=factoriod
 
 [Install]
 WantedBy=multi-user.target
