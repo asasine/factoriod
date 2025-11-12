@@ -6,35 +6,21 @@ on:
       version:
         description: 'New version'
         required: true
-    
+
 jobs:
   build:
     if: github.repository == 'asasine/factoriod'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      
+
     steps:
     - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
-
-    - name: Update project version
-      uses: vers-one/dotnet-project-version-updater@v1.3
-      with:
-        version: ${{ inputs.version }}
-        file: src/Factoriod.Daemon/Factoriod.Daemon.csproj
-    - name: Stage updated project version
-      run: git add src/*.csproj
 
     - name: Create debian package
       run: |
-        dotnet tool restore
-        dotnet tool run dotnet-deb install
-        dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj
-        cp -v src/Factoriod.Daemon/bin/Release/net6.0/factoriod.*.deb docs/
+        echo "Not implemented yet"
+        exit 1
 
     - name: Import GPG key
       uses: crazy-max/ghaction-import-gpg@v5
