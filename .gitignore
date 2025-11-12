@@ -1,12 +1,10 @@
-# .NET
-obj
-bin
+# Rust build directories
+/target
 
-# Visual Studio
-.vs
-launchSettings.json
-*.csproj.user
-UpgradeLog.htm
 
-# dotnet-deb
-Directory.Build.props
+# Mock systemd directories and content
+/etc
+/var/cache
+/var/lib
+factorio*.tar.xz
+/factorio

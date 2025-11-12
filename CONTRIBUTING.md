@@ -1,43 +1,23 @@
 # Contributing
 ## Development
+Many of the modules in this project can be developed and tested independently, without the need to run the daemon, as they are designed with platform-agnostic Rust code.
+
 ### Prerequisites
-1. Linux (tested on Ubuntu)
-1. [Install .NET 6.0 SDK](https://dotnet.microsoft.com/en-us/download)
+1. [Install Rust](https://www.rust-lang.org/tools/install)
 1. Clone the repo
 1. Open a terminal to the cloned repo
-1. Run: `dotnet tool restore`
-1. Run: `dotnet tool run dotnet-deb install`
+1. Run: `cargo build`
+1. Run: `cargo test`
 
 ### Launching the daemon
 1. Open a terminal to the cloned repo
-1. Run: `dotnet run --project src/Factoriod.Daemon`
-
+1. Run: `cargo run`
 
 ### Building the debian package
-The debian binary package is created using [quamotion/dotnet-packaging](https://github.com/quamotion/dotnet-packaging). It can be installed as a [.NET tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools).
+The debian binary package is created using [cargo-deb](https://crates.io/crates/cargo-deb).
 1. Open a terminal to the cloned repo
-1. Run: `dotnet tool run dotnet-deb -c Release src/Factoriod.Daemon/Factoriod.Daemon.csproj`
-1. Run: `sudo apt install ./src/Factoriod.Daemon/bin/Release/net6.0/linux-x64/factoriod.*.deb`
-
-It can be helpful to enable .NET development mode while running the daemon.
-1. Run: `sudo systemctl edit factoriod`
-1. Override the `DOTNET_ENVIRONMENT` environment variable by adding the following lines to the override file:
-    ```ini
-    ### Anything between here and the comment below will become the new contents of the file
-
-    [Service]
-    Environment=DOTNET_ENVIRONMENT=Development
-
-    ### Lines below this comment will be discarded
-    ```
-
-1. Save and quit the file
-1. Run: `sudo systemctl restart factoriod`
-
-### HTTP REPL
-The [ASP.NET Core HTTP REPL](https://learn.microsoft.com/aspnet/core/web-api/http-repl/) (Read-Eval-Print-Loop) is a command-line tool for interacting with HTTP services. It allows you to issue HTTP requests and inspect the responses in a terminal window. It can be used to test the daemon API.
-
-The HTTP REPL is best used with the daemon running in development mode. See the [Building the debian package](#building-the-debian-package) section for instructions on how to enable development mode.
+1. Run: `cargo deb`
+1. Run: `sudo apt install ./target/debian/factoriod.*.deb`
 
 ### Releasing a new version
 A new version can be released using the [.github/workflows/release.yml](.github/workflows/release.yml) workflow. This workflow will:
@@ -52,4 +32,6 @@ To trigger the workflow, go to [Actions > Release](https://github.com/asasine/fa
 - Minor version: added functionality in a backwards-compatible manner, including deprecations.
 - Patch version: backwards-compatible bug fixes.
 
-At this time, the this project is still in initial development, so the version is 0.y.z. This means that the public API should not be considered stable, and may change in backwards-incompatible ways between minor or patch releases.
+At this time, the this project is still in initial development, so the version is `0.y.z`.
+This means that the public API should not be considered stable, and may change in backwards-incompatible ways between minor or patch releases.
+I will make a best effort to limit breaking changes to minor releases.

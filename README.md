@@ -1,5 +1,5 @@
 # factoriod
-[![.NET](https://github.com/asasine/factoriod/actions/workflows/dotnet.yml/badge.svg)](https://github.com/asasine/factoriod/actions/workflows/dotnet.yml)
+[![Rust](https://github.com/asasine/factoriod/actions/workflows/rust.yaml/badge.svg)](https://github.com/asasine/factoriod/actions/workflows/rust.yaml)
 
 A factorio daemon for Ubuntu.
 
@@ -31,7 +31,6 @@ A factorio daemon for Ubuntu.
 
 ## Configuration
 The daemon reads configuration from the _/etc/factoriod/_ directory by default.
-The _/etc/factoriod/appsettings.json_ file can be modified at runtime to change the daemon's configuration.
 
 ### Systemd service
 1. [Install the daemon](#building-the-debian-package)
@@ -39,7 +38,9 @@ The _/etc/factoriod/appsettings.json_ file can be modified at runtime to change 
 1. To have the service start on boot: `sudo systemctl enable factoriod`
 1. View the logs: `journalctl -u factoriod -f`
 
-#### Directories in use
-- /var/cache/factoriod/: downloaded game binaries
-- /var/lib/factoriod/: dynamic files including save games and generated configuration
-- /etc/factoriod/: static configuration files
+#### Special directories and files
+- /var/cache/factoriod/factorio/: downloaded game binaries
+- /var/cache/factoriod/factorio.opts.env: a systemd-compatible environment file containing CLI flags for the `factorio` binary
+- /var/lib/factoriod/saves/: save games
+- /var/lib/factoriod/mods/: mods
+- /etc/factoriod/: configuration files, used to generate the contents of the above directories
