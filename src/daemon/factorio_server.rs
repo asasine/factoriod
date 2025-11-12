@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use systemd_directories::SystemdDirs;
+use tracing::{debug, trace, warn};
 
 pub type Result<T> = std::result::Result<T, FactorioServerStartError>;
 
@@ -152,20 +153,20 @@ impl FactorioServer {
                 if map_gen_settings.is_file() {
                     command.arg("--map-gen-settings").arg(map_gen_settings);
                 } else {
-                    tracing::warn!("{} is not a file!", map_gen_settings.display());
+                    warn!("{} is not a file!", map_gen_settings.display());
                 }
             } else {
-                tracing::trace!("map-gen-settings.json not found in {}", self.dirs.config_dir.display());
+                trace!("map-gen-settings.json not found in {}", self.dirs.config_dir.display());
             }
 
             if let Ok(map_settings) = self.dirs.config_dir.join("map-settings.json").canonicalize() {
                 if map_settings.is_file() {
                     command.arg("--map-settings").arg(map_settings);
                 } else {
-                    tracing::warn!("{} is not a file!", map_settings.display());
+                    warn!("{} is not a file!", map_settings.display());
                 }
             } else {
-                tracing::trace!("map-settings.json not found in {}", self.dirs.config_dir.display());
+                trace!("map-settings.json not found in {}", self.dirs.config_dir.display());
             }
         }
 
@@ -189,7 +190,7 @@ impl FactorioServer {
     /// - `server-adminlist.json`
     fn add_server_options(&self, command: &mut Command) {
         if !self.dirs.config_dir.is_dir() {
-            tracing::trace!("config directory does not exist: {}", self.dirs.config_dir.display());
+            trace!("config directory does not exist: {}", self.dirs.config_dir.display());
             return;
         }
 
@@ -197,40 +198,40 @@ impl FactorioServer {
             if server_settings.is_file() {
                 command.arg("--server-settings").arg(server_settings);
             } else {
-                tracing::warn!("{} is not a file!", server_settings.display());
+                warn!("{} is not a file!", server_settings.display());
             }
         } else {
-            tracing::trace!("server-settings.json not found in {}", self.dirs.config_dir.display());
+            trace!("server-settings.json not found in {}", self.dirs.config_dir.display());
         }
 
         if let Ok(server_whitelist) = self.dirs.config_dir.join("server-whitelist.json").canonicalize() {
             if server_whitelist.is_file() {
                 command.arg("--use-server-whitelist").arg("--server-whitelist").arg(server_whitelist);
             } else {
-                tracing::warn!("{} is not a file!", server_whitelist.display());
+                warn!("{} is not a file!", server_whitelist.display());
             }
         } else {
-            tracing::trace!("server-whitelist.json not found in {}", self.dirs.config_dir.display());
+            trace!("server-whitelist.json not found in {}", self.dirs.config_dir.display());
         }
 
         if let Ok(server_banlist) = self.dirs.config_dir.join("server-banlist.json").canonicalize() {
             if server_banlist.exists() && server_banlist.is_file() {
                 command.arg("--server-banlist").arg(server_banlist);
             } else {
-                tracing::warn!("{} is not a file!", server_banlist.display());
+                warn!("{} is not a file!", server_banlist.display());
             }
         } else {
-            tracing::trace!("server-banlist.json not found in {}", self.dirs.config_dir.display());
+            trace!("server-banlist.json not found in {}", self.dirs.config_dir.display());
         }
 
         if let Ok(server_adminlist) = self.dirs.config_dir.join("server-adminlist.json").canonicalize() {
             if server_adminlist.exists() && server_adminlist.is_file() {
                 command.arg("--server-adminlist").arg(server_adminlist);
             } else {
-                tracing::warn!("{} is not a file!", server_adminlist.display());
+                warn!("{} is not a file!", server_adminlist.display());
             }
         } else {
-            tracing::trace!("server-adminlist.json not found in {}", self.dirs.config_dir.display());
+            trace!("server-adminlist.json not found in {}", self.dirs.config_dir.display());
         }
     }
 
@@ -240,16 +241,16 @@ impl FactorioServer {
         match self.dirs.state_dir.join("saves").canonicalize() {
             Ok(save_dir) if save_dir.is_dir() => {
                 let latest_save = crate::get_latest_save(&save_dir)?;
-                tracing::debug!("latest save: {}", latest_save.display());
+                debug!("latest save: {}", latest_save.display());
                 command.arg("--start-server").arg(latest_save);
                 Ok(self)
             },
             Ok(save_dir) => {
-                tracing::warn!("{} is not a directory", save_dir.display());
+                warn!("{} is not a directory", save_dir.display());
                 return Err(FactorioServerStartError::PathNotFound(save_dir.clone()));
             }
             _ => {
-                tracing::warn!("saves directory does not exist at {}. A save must be created first before continuing.", save_dir.display());
+                warn!("saves directory does not exist at {}. A save must be created first before continuing.", save_dir.display());
                 return Err(FactorioServerStartError::PathNotFound(save_dir.clone()));
             }
         }

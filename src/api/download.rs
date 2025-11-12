@@ -13,7 +13,7 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use strum;
 use tar;
-use tracing;
+use tracing::{self, debug};
 use xz2;
 
 pub type Version = semver::Version;
@@ -179,7 +179,7 @@ pub fn download_to<P: AsRef<std::path::Path>>(
         .unwrap_or("factorio.tar.xz");
 
     let destination = directory.join(filename);
-    tracing::debug!("downloading to: {}", destination.display());
+    debug!("downloading to: {}", destination.display());
     let mut file = std::fs::File::create(&destination)?;
     response.copy_to(&mut file)?;
     Ok(destination)

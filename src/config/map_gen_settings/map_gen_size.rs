@@ -166,11 +166,11 @@ mod tests {
         fn test_map_gen_size_float_try_from() {
             assert_eq!(
                 MapGenSizeFloat::try_from(0.0),
-                Ok(MapGenSizeFloat::new(0.0).expect("valid"))
+                Ok(MapGenSizeFloat::try_new(0.0).expect("valid"))
             );
             assert_eq!(
                 MapGenSizeFloat::try_from(6.0),
-                Ok(MapGenSizeFloat::new(6.0).expect("valid"))
+                Ok(MapGenSizeFloat::try_new(6.0).expect("valid"))
             );
             assert_eq!(
                 MapGenSizeFloat::try_from(-1.0),
@@ -205,7 +205,7 @@ mod tests {
         #[test]
         fn test_map_gen_size_f32_from() {
             assert_eq!(
-                f32::from(MapGenSize::Float(MapGenSizeFloat::new(4.2).expect("valid"))),
+                f32::from(MapGenSize::Float(MapGenSizeFloat::try_new(4.2).expect("valid"))),
                 4.2
             );
             assert_eq!(f32::from(MapGenSize::None), 0.0);
@@ -254,7 +254,7 @@ mod tests {
                 (MapGenSize::VeryBig, r#""very-big""#),
                 (MapGenSize::VeryGood, r#""very-good""#),
                 (
-                    MapGenSize::Float(MapGenSizeFloat::new(4.2).expect("valid")),
+                    MapGenSize::Float(MapGenSizeFloat::try_new(4.2).expect("valid")),
                     "4.2",
                 ),
             ];

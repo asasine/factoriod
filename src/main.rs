@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use factoriod::ServerOpts;
 use factoriod::api::download::{self, Build, Distro};
 use systemd_directories::SystemdDirs;
+use tracing::{info, trace};
 
 /// Writes the options for the factoriod systemd service to the `factorio.opts.env` file in the cache directory.
 fn write_opts_env(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error::Error>> {
@@ -19,7 +20,7 @@ fn write_opts_env(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error::
         .join("factorio.opts.env");
 
     let server_opts = ServerOpts::new(systemd_dirs.config_dir(), systemd_dirs.state_dir());
-    tracing::info!("Writing server options to {}", opts_env.display());
+    info!("Writing server options to {}", opts_env.display());
     std::fs::write(&opts_env, server_opts.to_env().as_encoded_bytes())?;
     Ok(())
 }
@@ -47,7 +48,7 @@ fn acquire_binaries(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error
                     == Some("tar")
             })
             .map(|path| {
-                tracing::trace!("Found tar.xz archive: {}", path.display());
+                trace!("Found tar.xz archive: {}", path.display());
                 path
             })
             .collect())
@@ -55,7 +56,7 @@ fn acquire_binaries(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error
 
     let mut tar_xz_paths = scan_tar_xz_paths()?;
     if tar_xz_paths.is_empty() {
-        tracing::info!("No compressed binaries found in {}, downloading the latest.", download_directory.display());
+        info!("No compressed binaries found in {}, downloading the latest.", download_directory.display());
         let latest_stable_headless_version = factoriod::api::download::latest_stable_headless_version()?;
         download::download_to(&latest_stable_headless_version, Build::Headless, Distro::Linux64, &download_directory)?;
         tar_xz_paths = scan_tar_xz_paths()?;
@@ -63,7 +64,7 @@ fn acquire_binaries(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error
 
     for archive in tar_xz_paths {
         let destination = archive.parent().ok_or("archive has no parent")?;
-        tracing::info!("Extracting {} to {}", archive.display(), destination.display());
+        info!("Extracting {} to {}", archive.display(), destination.display());
         download::extract_to(&archive, destination)?;
     }
 

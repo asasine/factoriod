@@ -1,9 +1,11 @@
-//! The server options module contains the `ServerOpts` struct, which is used to generate the `FACTORIO_OPTS`
+//! The server options module contains the [`ServerOpts`] struct, which is used to generate the `FACTORIO_OPTS`
 //! environment variable used by the factoriod systemd service.
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::{Command, CommandArgs};
+
+use tracing::{debug, info, warn};
 
 use crate::utils;
 
@@ -14,8 +16,8 @@ fn add_file_opt<P: AsRef<Path>>(command: &mut Command, flags: &[&str], file: P) 
             command.args(flags);
             command.arg(file);
         },
-        Ok(file) => tracing::warn!("{} is not a file!", file.display()),
-        Err(e) => tracing::debug!("failed to canonicalize {}: {}", file.as_ref().display(), e),
+        Ok(file) => warn!("{} is not a file!", file.display()),
+        Err(e) => debug!("failed to canonicalize {}: {}", file.as_ref().display(), e),
     }
 }
 
@@ -49,9 +51,9 @@ fn add_opts<P: AsRef<Path>>(command: &mut Command, word: &str, dir: &Option<P>, 
     let dir = dir.as_ref().map(|p| p.as_ref());
     match dir {
         Some(p) if p.is_dir() => adder(command, p),
-        Some(p) if !p.is_dir() => tracing::warn!("{} is not a directory!", p.display()),
-        Some(p) => tracing::info!("{} does not exist", p.display()),
-        None => tracing::info!("no {} directory provided, no options will be added", word),
+        Some(p) if !p.is_dir() => warn!("{} is not a directory!", p.display()),
+        Some(p) => info!("{} does not exist", p.display()),
+        None => info!("no {} directory provided, no options will be added", word),
     }
 }
 
