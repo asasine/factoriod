@@ -1,5 +1,4 @@
 pub mod api;
-pub mod config;
 pub mod daemon;
 mod server_opts;
 mod utils;

@@ -233,6 +233,7 @@ name = "factoriod"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "factoriod-config",
  "nutype",
  "reqwest",
  "semver",
@@ -245,6 +246,15 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "xz2",
+]
+
+[[package]]
+name = "factoriod-config"
+version = "0.1.0"
+dependencies = [
+ "nutype",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

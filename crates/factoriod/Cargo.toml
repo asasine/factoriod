@@ -9,6 +9,7 @@ default-run = "factoriod"
 
 [dependencies]
 clap.workspace = true
+factoriod-config.workspace = true
 nutype.workspace = true
 reqwest.workspace = true
 semver.workspace = true
