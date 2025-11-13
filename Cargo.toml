@@ -1,10 +1,14 @@
-[package]
-name = "factoriod"
-version = "0.1.0"
-edition = "2021"
-default-run = "factoriod"
+[workspace]
+members = ["crates/factoriod"]
+resolver = "2"
 
-[dependencies]
+[workspace.package]
+edition = "2021"
+authors = ["Adam Sasine <adam.sasine@gmail.com>"]
+homepage = "https://github.com/asasine/factoriod"
+repository = "https://github.com/asasine/factoriod"
+
+[workspace.dependencies]
 clap = { version = "4.5", features = ["derive"] }
 nutype = { version = "0.6", features = ["serde"] }
 reqwest = { version = "0.12", features = ["blocking", "json"] }
@@ -17,6 +21,6 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 xz2 = "0.1"
 
-[dev-dependencies]
+# dev-dependencies
 serde_json = "1.0.114"
 tempfile = "3.10.1"
