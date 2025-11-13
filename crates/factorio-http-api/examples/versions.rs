@@ -1,4 +1,4 @@
-use factoriod::api::download;
+use factorio_http_api::download;
 
 fn main() {
     println!("versions: {:?}", download::latest_versions());

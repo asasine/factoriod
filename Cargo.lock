@@ -193,7 +193,7 @@ dependencies = [
 name = "download-latest-headless"
 version = "0.1.0"
 dependencies = [
- "factoriod",
+ "factorio-http-api",
 ]
 
 [[package]]
@@ -225,7 +225,21 @@ dependencies = [
 name = "extract"
 version = "0.1.0"
 dependencies = [
+ "factorio-http-api",
  "factoriod",
+]
+
+[[package]]
+name = "factorio-http-api"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "semver",
+ "serde",
+ "strum",
+ "tar",
+ "tracing",
+ "xz2",
 ]
 
 [[package]]
@@ -233,6 +247,7 @@ name = "factoriod"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "factorio-http-api",
  "factoriod-config",
  "nutype",
  "reqwest",

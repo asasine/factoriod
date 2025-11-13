@@ -10,6 +10,7 @@ repository = "https://github.com/asasine/factoriod"
 
 [workspace.dependencies]
 clap = { version = "4.5", features = ["derive"] }
+factorio-http-api.path = "crates/factorio-http-api"
 factoriod.path = "crates/factoriod"
 factoriod-config.path = "crates/factoriod-config"
 nutype = { version = "0.6", features = ["serde"] }

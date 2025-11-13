@@ -7,4 +7,4 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-factoriod.workspace = true
+factorio-http-api.workspace = true
