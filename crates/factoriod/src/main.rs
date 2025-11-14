@@ -9,7 +9,7 @@
 use std::path::PathBuf;
 
 use factoriod::ServerOpts;
-use factoriod::api::download::{self, Build, Distro};
+use factorio_http_api::download::{self, Build, Distro};
 use systemd_directories::SystemdDirs;
 use tracing::{info, trace};
 
@@ -57,7 +57,7 @@ fn acquire_binaries(systemd_dirs: &SystemdDirs) -> Result<(), Box<dyn std::error
     let mut tar_xz_paths = scan_tar_xz_paths()?;
     if tar_xz_paths.is_empty() {
         info!("No compressed binaries found in {}, downloading the latest.", download_directory.display());
-        let latest_stable_headless_version = factoriod::api::download::latest_stable_headless_version()?;
+        let latest_stable_headless_version = download::latest_stable_headless_version()?;
         download::download_to(&latest_stable_headless_version, Build::Headless, Distro::Linux64, &download_directory)?;
         tar_xz_paths = scan_tar_xz_paths()?;
     }

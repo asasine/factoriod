@@ -1,4 +1,4 @@
-use factoriod::api::download;
+use factorio_http_api::download;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let latest_stable_headless_version = download::latest_stable_headless_version()?;

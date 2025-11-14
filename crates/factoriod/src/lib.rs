@@ -1,16 +1,12 @@
-pub mod api;
-pub mod config;
+use std::path::Path;
+pub use server_opts::*;
+pub use utils::*;
+use factorio_http_api::download;
+use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
+
 pub mod daemon;
 mod server_opts;
 mod utils;
-
-use std::path::Path;
-
-pub use server_opts::*;
-pub use utils::*;
-use crate::api::download;
-
-use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
 
 /// Set up tracing for the application. This will log all traces to the console. It additionall sets the log level for
 /// the factoriod crates to `trace`.

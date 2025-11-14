@@ -20,7 +20,7 @@ struct FactorioServerDirs {
     state_dir: PathBuf,
 
     /// The path to the server's configuration directory. This directory may contain JSON files that configure the
-    /// server, map generation, and other settings. See [[`crate::config`]] for more information.
+    /// server, map generation, and other settings. See [`crate::config`] for more information.
     config_dir: PathBuf,
 }
 

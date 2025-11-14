@@ -4,7 +4,7 @@
 //!
 //! # Example
 //! ```no_run
-//! use factoriod::api::download;
+//! use factorio_http_api::download;
 //! let latest_versions = download::latest_versions();
 //! println!("latest versions: {:?}", latest_versions);
 //! ```
@@ -86,7 +86,7 @@ pub struct Versions {
 ///
 /// # Example
 /// ```no_run
-/// use factoriod::api::download;
+/// use factorio_http_api::download;
 /// let latest_versions = download::latest_versions();
 /// println!("latest versions: {:?}", latest_versions);
 /// ```
@@ -99,7 +99,7 @@ pub fn latest_versions() -> Result<Versions, Box<dyn std::error::Error>> {
 ///
 /// # Example
 /// ```no_run
-/// use factoriod::api::download;
+/// use factorio_http_api::download;
 /// let latest_stable_headless_version = download::latest_stable_headless_version();
 /// println!("latest stable headless version: {:?}", latest_stable_headless_version);
 /// ```
@@ -117,7 +117,7 @@ pub fn latest_stable_headless_version() -> Result<Version, Box<dyn std::error::E
 ///
 /// # Example
 /// ```
-/// use factoriod::api::download::{self, Build, Distro};
+/// use factorio_http_api::download::{self, Build, Distro};
 /// let version = download::Version::parse("1.1.0").unwrap();
 /// let download_url = download::download_url(&version, Build::Headless, Distro::Linux64);
 /// println!("download URL: {}", download_url);
@@ -134,7 +134,7 @@ pub fn download_url(version: &Version, build: Build, distro: Distro) -> String {
 /// # Example
 /// ```no_run
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// use factoriod::api::download;
+/// use factorio_http_api::download;
 /// let version = download::Version::new(1, 1, 1);
 /// let archive = download::download_to(
 ///     &version,
@@ -190,7 +190,7 @@ pub fn download_to<P: AsRef<std::path::Path>>(
 /// # Example
 /// ```no_run
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// use factoriod::api::download;
+/// use factorio_http_api::download;
 /// download::extract_to("/tmp/factorio.tar.xz", "/tmp/factorio")?;
 /// # Ok(())
 /// # }

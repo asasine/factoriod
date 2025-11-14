@@ -1,0 +1,16 @@
+[package]
+name = "factorio-http-api"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+reqwest.workspace = true
+semver.workspace = true
+serde.workspace = true
+strum.workspace = true
+tar.workspace = true
+tracing.workspace = true
+xz2.workspace = true
